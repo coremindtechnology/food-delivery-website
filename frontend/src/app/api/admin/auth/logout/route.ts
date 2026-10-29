@@ -8,7 +8,7 @@ export async function POST() {
     const admin = await getAuthenticatedAdmin();
     if (admin) {
       await logAuditEvent({
-        adminId: admin._id,
+        actorId: admin._id,
         action: "ADMIN_LOGOUT",
         entity: "Admin",
         entityId: admin._id,
@@ -29,4 +29,3 @@ export async function POST() {
     return handleApiError(err);
   }
 }
-

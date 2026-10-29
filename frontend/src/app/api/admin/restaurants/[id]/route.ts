@@ -55,7 +55,7 @@ export async function PATCH(req: NextRequest, { params }: RouteParams) {
 
     const clientIp = req.headers.get("x-forwarded-for") || req.headers.get("x-real-ip") || "unknown";
     await logAuditEvent({
-      adminId: authCheck.admin!._id,
+      actorId: authCheck.admin!._id,
       restaurantId: restaurant._id,
       action: "RESTAURANT_SETTINGS_UPDATED",
       entity: "Restaurant",
@@ -70,4 +70,3 @@ export async function PATCH(req: NextRequest, { params }: RouteParams) {
     return handleApiError(err);
   }
 }
-

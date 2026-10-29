@@ -51,7 +51,7 @@ export async function POST(req: NextRequest) {
       await AdminLoginChallenge.deleteOne({ _id: challenge._id });
 
       await logAuditEvent({
-        adminId: admin._id,
+        actorId: admin._id,
         action: "ACCOUNT_LOCKED_OTP_ATTEMPTS",
         entity: "Admin",
         entityId: admin._id,
@@ -75,7 +75,7 @@ export async function POST(req: NextRequest) {
       const remaining = Math.max(0, MAX_LOGIN_ATTEMPTS - challenge.attempts);
 
       await logAuditEvent({
-        adminId: admin._id,
+        actorId: admin._id,
         action: "LOGIN_SMS_OTP_FAILED",
         entity: "Admin",
         entityId: admin._id,
@@ -104,7 +104,7 @@ export async function POST(req: NextRequest) {
     await challenge.save();
 
     await logAuditEvent({
-      adminId: admin._id,
+      actorId: admin._id,
       action: "LOGIN_STEP2_SMS_VERIFIED",
       entity: "Admin",
       entityId: admin._id,
@@ -125,4 +125,3 @@ export async function POST(req: NextRequest) {
     return handleApiError(err);
   }
 }
-

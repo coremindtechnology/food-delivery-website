@@ -1,4 +1,5 @@
 import crypto from "crypto";
+import type { Types } from "mongoose";
 import { connectToDatabase } from "@/lib/mongodb";
 import { AuditLog } from "@/models/AuditLog";
 
@@ -198,9 +199,9 @@ export function verifyAndConsumeRecoveryCode(
 // ── 5. System Audit Logger ─────────────────────────────────────────────────────
 
 export interface RecordAuditParams {
-  restaurantId?: mongoose.Types.ObjectId | string;
+  restaurantId?: Types.ObjectId | string;
   actorType?: "admin" | "customer" | "system";
-  actorId?: mongoose.Types.ObjectId | string;
+  actorId?: Types.ObjectId | string;
   action: string;
   entity:
     | "Restaurant"
@@ -211,7 +212,7 @@ export interface RecordAuditParams {
     | "Refund"
     | "Inventory"
     | "Admin";
-  entityId?: mongoose.Types.ObjectId | string;
+  entityId?: Types.ObjectId | string;
   previousState?: Record<string, unknown>;
   newState?: Record<string, unknown>;
   ipAddress?: string;
@@ -235,4 +236,3 @@ export async function logAuditEvent(params: RecordAuditParams): Promise<void> {
     console.error("Failed to write audit log:", err);
   }
 }
-

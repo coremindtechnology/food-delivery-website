@@ -99,7 +99,7 @@ export async function PATCH(req: NextRequest) {
 
     const clientIp = req.headers.get("x-forwarded-for") || req.headers.get("x-real-ip") || "unknown";
     await logAuditEvent({
-      adminId: authCheck.admin!._id,
+      actorId: authCheck.admin!._id,
       action: isBlocked ? "CUSTOMER_BLOCKED" : "CUSTOMER_UNBLOCKED",
       entity: "Admin",
       entityId: customer._id,
@@ -112,4 +112,3 @@ export async function PATCH(req: NextRequest) {
     return handleApiError(err);
   }
 }
-

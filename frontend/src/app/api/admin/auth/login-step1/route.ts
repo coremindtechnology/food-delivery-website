@@ -44,7 +44,7 @@ export async function POST(req: NextRequest) {
         (admin.lockedUntil.getTime() - Date.now()) / (60 * 1000)
       );
       await logAuditEvent({
-        adminId: admin._id,
+        actorId: admin._id,
         action: "LOGIN_REJECTED_LOCKED",
         entity: "Admin",
         entityId: admin._id,
@@ -67,7 +67,7 @@ export async function POST(req: NextRequest) {
         await admin.save();
 
         await logAuditEvent({
-          adminId: admin._id,
+          actorId: admin._id,
           action: "ACCOUNT_LOCKED_FAILED_ATTEMPTS",
           entity: "Admin",
           entityId: admin._id,
@@ -85,7 +85,7 @@ export async function POST(req: NextRequest) {
 
       const remaining = MAX_LOGIN_ATTEMPTS - admin.failedLoginAttempts;
       await logAuditEvent({
-        adminId: admin._id,
+        actorId: admin._id,
         action: "LOGIN_PASSWORD_FAILED",
         entity: "Admin",
         entityId: admin._id,
@@ -126,7 +126,7 @@ export async function POST(req: NextRequest) {
     }
 
     await logAuditEvent({
-      adminId: admin._id,
+      actorId: admin._id,
       action: "LOGIN_STEP1_PASSWORD_VERIFIED",
       entity: "Admin",
       entityId: admin._id,
@@ -147,4 +147,3 @@ export async function POST(req: NextRequest) {
     return handleApiError(err);
   }
 }
-

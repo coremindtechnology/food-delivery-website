@@ -55,7 +55,7 @@ export async function POST(req: NextRequest) {
 
     const clientIp = req.headers.get("x-forwarded-for") || req.headers.get("x-real-ip") || "unknown";
     await logAuditEvent({
-      adminId: admin._id,
+      actorId: admin._id,
       action: "TOTP_MFA_ENROLLED",
       entity: "Admin",
       entityId: admin._id,
@@ -70,4 +70,3 @@ export async function POST(req: NextRequest) {
     return handleApiError(err);
   }
 }
-

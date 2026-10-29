@@ -104,7 +104,7 @@ export async function POST(req: NextRequest) {
 
       const clientIp = req.headers.get("x-forwarded-for") || req.headers.get("x-real-ip") || "unknown";
       await logAuditEvent({
-        adminId: authCheck.admin!._id,
+        actorId: authCheck.admin!._id,
         restaurantId: order.restaurantId,
         action: "ORDER_ASSIGNED_TO_DELIVERY_RIDER",
         entity: "Order",
@@ -119,4 +119,3 @@ export async function POST(req: NextRequest) {
     return handleApiError(err);
   }
 }
-

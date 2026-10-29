@@ -1,4 +1,5 @@
 import { NextRequest } from "next/server";
+import mongoose from "mongoose";
 import { connectToDatabase } from "@/lib/mongodb";
 import { verifyAdminPermissions } from "@/lib/admin-auth";
 import { AdminUser, AdminRole } from "@/models/AdminUser";
@@ -104,7 +105,7 @@ export async function POST(req: NextRequest) {
 
     const clientIp = req.headers.get("x-forwarded-for") || req.headers.get("x-real-ip") || "unknown";
     await logAuditEvent({
-      adminId: authCheck.admin!._id,
+      actorId: authCheck.admin!._id,
       action: "STAFF_USER_CREATED",
       entity: "Admin",
       entityId: created._id,
@@ -140,7 +141,9 @@ export async function PATCH(req: NextRequest) {
 
     if (role !== undefined) staff.role = role as AdminRole;
     if (assignedRestaurantId !== undefined) {
-      staff.assignedRestaurantId = assignedRestaurantId ? assignedRestaurantId : undefined;
+      staff.assignedRestaurantId = assignedRestaurantId
+        ? new mongoose.Types.ObjectId(assignedRestaurantId)
+        : undefined;
     }
     if (isActive !== undefined) staff.isActive = isActive;
 
@@ -148,7 +151,7 @@ export async function PATCH(req: NextRequest) {
 
     const clientIp = req.headers.get("x-forwarded-for") || req.headers.get("x-real-ip") || "unknown";
     await logAuditEvent({
-      adminId: authCheck.admin!._id,
+      actorId: authCheck.admin!._id,
       action: "STAFF_USER_UPDATED",
       entity: "Admin",
       entityId: staff._id,
@@ -161,4 +164,3 @@ export async function PATCH(req: NextRequest) {
     return handleApiError(err);
   }
 }
-
