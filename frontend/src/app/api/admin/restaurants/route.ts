@@ -17,10 +17,16 @@ export async function GET() {
       return errorResponse(authCheck.error || "Unauthorized", authCheck.statusCode || 401);
     }
 
-    const restaurants = await Restaurant.find({ isArchived: false }).sort({ name: 1 }).lean();
+    const filter: Record<string, unknown> = { isArchived: false };
+    if (authCheck.admin?.role !== "super_admin" && !authCheck.admin?.assignedRestaurantId) {
+      return errorResponse("No restaurant is assigned to this admin account.", 403);
+    }
+    if (authCheck.admin?.role !== "super_admin" && authCheck.admin?.assignedRestaurantId) {
+      filter._id = authCheck.admin.assignedRestaurantId;
+    }
+    const restaurants = await Restaurant.find(filter).sort({ name: 1 }).lean();
     return successResponse(restaurants);
   } catch (err) {
     return handleApiError(err);
   }
 }
-

@@ -3,10 +3,8 @@
 import React from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Star, Clock, ShoppingBag, ShieldCheck, ArrowRight, MapPin } from "lucide-react";
+import { Clock3, MapPin, ShoppingBag, ArrowRight } from "lucide-react";
 import { Restaurant } from "@/types";
-import { RestaurantBadge } from "./RestaurantBadge";
-import { Button } from "../ui/Button";
 import { cn } from "@/lib/utils";
 
 interface RestaurantCardProps {
@@ -16,139 +14,98 @@ interface RestaurantCardProps {
 
 export function RestaurantCard({ restaurant, priority = false }: RestaurantCardProps) {
   const isVeg = restaurant.type === "veg";
+  const buttonTone = isVeg
+    ? "bg-[#0f8d44] hover:bg-[#0b7438]"
+    : "bg-[#b63131] hover:bg-[#9c2727]";
 
   return (
-    <div
+    <article
       className={cn(
-        "group relative flex flex-col overflow-hidden rounded-3xl bg-white border transition-all duration-300",
-        "shadow-card hover:shadow-lift hover:-translate-y-1",
-        isVeg
-          ? "border-veg-200/60 hover:border-veg-500/50"
-          : "border-nonveg-200/60 hover:border-nonveg-500/50"
+        "group relative flex flex-col overflow-hidden rounded-[30px] border-[3px] bg-[#fffaf2] p-2.5 shadow-[0_12px_32px_rgba(108,74,28,0.08)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_18px_38px_rgba(108,74,28,0.12)]",
+        isVeg ? "border-[#0d8d36]/20" : "border-[#b74040]/20"
       )}
     >
-      {/* Top Banner Tag */}
-      {restaurant.bannerText && (
-        <div
-          className={cn(
-            "px-4 py-1.5 text-center text-xs font-semibold tracking-wide text-white uppercase",
-            isVeg ? "bg-veg-700" : "bg-nonveg-800"
-          )}
-        >
-          {restaurant.bannerText}
-        </div>
-      )}
-
-      {/* Hero Image */}
-      <div className="relative h-60 w-full overflow-hidden bg-cream-200">
-        <Image
-          src={restaurant.heroImage}
-          alt={restaurant.name}
-          fill
-          priority={priority}
-          sizes="(max-width: 768px) 100vw, 50vw"
-          className="object-cover transition-transform duration-700 ease-out group-hover:scale-105"
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-charcoal-900/80 via-charcoal-900/20 to-transparent" />
-
-        {/* Floating Dietary Badge */}
-        <div className="absolute top-4 left-4 rounded-xl bg-white/95 px-3 py-1.5 backdrop-blur-sm shadow-soft">
-          <RestaurantBadge type={restaurant.type} size="md" />
+      <div
+        className={cn(
+          "relative overflow-hidden rounded-[24px]",
+          isVeg ? "bg-[#1e8a39]" : "bg-[#9a2d2d]"
+        )}
+      >
+        <div className="absolute inset-x-0 top-0 z-10 flex items-center justify-between px-4 pt-4">
+          <div className={cn("inline-flex items-center gap-2 rounded-full border border-white/40 bg-black/15 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.22em] text-white backdrop-blur-sm", isVeg ? "" : "") }>
+            <span className={cn("inline-block h-2.5 w-2.5 rounded-full border border-white/60", isVeg ? "bg-[#37d178]" : "bg-[#ff9d7a]") } />
+            {restaurant.bannerText}
+          </div>
         </div>
 
-        {/* Rating Floating Tag */}
-        <div className="absolute top-4 right-4 flex items-center gap-1 rounded-xl bg-charcoal-900/80 px-2.5 py-1 text-white backdrop-blur-sm text-xs font-semibold">
-          <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
-          <span>{restaurant.rating.toFixed(1)}</span>
-          <span className="text-white/60 text-[10px]">({restaurant.reviewCount})</span>
+        <div className="relative h-[280px] sm:h-[330px] lg:h-[360px]">
+          <Image
+            src={restaurant.heroImage}
+            alt={restaurant.name}
+            fill
+            priority={priority}
+            sizes="(max-width: 1024px) 100vw, 50vw"
+            className="object-cover transition-transform duration-700 ease-out group-hover:scale-105"
+          />
+          <div
+            className={cn(
+              "absolute inset-0",
+              isVeg ? "bg-gradient-to-t from-[#0d4d1b]/80 via-[#0d4d1b]/10 to-transparent" : "bg-gradient-to-t from-[#3d0d12]/80 via-[#3d0d12]/10 to-transparent"
+            )}
+          />
         </div>
 
-        {/* Bottom Image Overlay Details */}
-        <div className="absolute bottom-4 left-4 right-4 text-white">
-          <h3 className="font-display text-2xl font-bold tracking-tight text-white drop-shadow-sm">
+        <div className="absolute inset-x-0 bottom-0 z-10 p-5 text-white">
+          <h3 className="max-w-[85%] text-3xl font-black leading-[0.96] tracking-[-0.06em] text-white sm:text-[2.5rem]">
             {restaurant.name}
           </h3>
-          <p className="text-xs text-white/90 line-clamp-1 mt-0.5">
-            {restaurant.subtitle}
-          </p>
         </div>
       </div>
 
-      {/* Card Body */}
-      <div className="flex flex-1 flex-col justify-between p-6">
-        <div>
-          {/* Quick Metrics Bar */}
-          <div className="grid grid-cols-3 divide-x divide-cream-300 rounded-2xl bg-cream-50 p-3 mb-5 border border-cream-200">
-            <div className="flex flex-col items-center justify-center text-center px-1">
-              <span className="flex items-center gap-1 text-[11px] font-medium text-charcoal-500">
-                <Clock className="w-3.5 h-3.5" /> Delivery
-              </span>
-              <span className="text-xs font-bold text-charcoal-800 mt-0.5">
-                {restaurant.deliveryTime}
-              </span>
+      <div className="space-y-5 px-1 pb-2 pt-4">
+        <div className="grid grid-cols-2 gap-2 rounded-[18px] border border-[#eddfc6] bg-[#f8f1e6] p-2.5">
+          <div className="flex flex-col items-center justify-center rounded-[12px] bg-white/70 px-1 py-2 text-center">
+            <div className="mb-1 flex items-center gap-1 text-[#6a4a2d]">
+              <Clock3 className="h-3.5 w-3.5" />
+              <span className="text-[10px] font-medium uppercase tracking-[0.12em]">Delivery</span>
             </div>
-            <div className="flex flex-col items-center justify-center text-center px-1">
-              <span className="flex items-center gap-1 text-[11px] font-medium text-charcoal-500">
-                <ShoppingBag className="w-3.5 h-3.5" /> Min Order
-              </span>
-              <span className="text-xs font-bold text-charcoal-800 mt-0.5">
-                ₹{restaurant.minOrder}
-              </span>
-            </div>
-            <div className="flex flex-col items-center justify-center text-center px-1">
-              <span className="text-[11px] font-medium text-charcoal-500">
-                Price Level
-              </span>
-              <span className="text-xs font-bold text-charcoal-800 mt-0.5 truncate max-w-full">
-                {restaurant.priceRange.split(" ")[0]}
-              </span>
-            </div>
+            <span className="text-sm font-bold text-[#2b1d14]">{restaurant.deliveryTime}</span>
           </div>
-
-          {/* Description */}
-          <p className="text-xs text-charcoal-600 line-clamp-2 leading-relaxed mb-4">
-            {restaurant.description}
-          </p>
-
-          {/* Features Highlights */}
-          <div className="space-y-1.5 mb-6">
-            {restaurant.features.slice(0, 3).map((feat, idx) => (
-              <div
-                key={idx}
-                className="flex items-center gap-2 text-xs text-charcoal-700"
-              >
-                <ShieldCheck
-                  className={cn(
-                    "w-4 h-4 flex-shrink-0",
-                    isVeg ? "text-veg-600" : "text-nonveg-700"
-                  )}
-                />
-                <span className="truncate">{feat}</span>
-              </div>
-            ))}
+          <div className="flex flex-col items-center justify-center rounded-[12px] bg-white/70 px-1 py-2 text-center">
+            <div className="mb-1 flex items-center gap-1 text-[#6a4a2d]">
+              <ShoppingBag className="h-3.5 w-3.5" />
+              <span className="text-[10px] font-medium uppercase tracking-[0.12em]">Min Order</span>
+            </div>
+            <span className="text-sm font-bold text-[#2b1d14]">₹{restaurant.minOrder}</span>
           </div>
+        </div>
 
-          <div className="flex items-center gap-1.5 text-xs text-charcoal-500 mb-6">
-            <MapPin className="w-3.5 h-3.5 flex-shrink-0 text-charcoal-400" />
+        <p className="text-sm leading-relaxed text-[#5d4733]">
+          {restaurant.description}
+        </p>
+
+        <div className="space-y-2.5 text-sm text-[#3d2d23]">
+          <div className="flex items-center gap-2">
+            <span className={cn("inline-flex h-5 w-5 items-center justify-center rounded-full border border-current text-xs", isVeg ? "text-[#178646] border-[#178646]/50" : "text-[#c14b4b] border-[#c14b4b]/50")}>✓</span>
+            <span className="font-medium">{restaurant.features[0]}</span>
+          </div>
+          <div className="flex items-center gap-2 text-[#5d4733]">
+            <MapPin className={cn("h-4 w-4 flex-shrink-0", isVeg ? "text-[#178646]" : "text-[#c14b4b]")} />
             <span className="truncate">{restaurant.address}</span>
           </div>
         </div>
 
-        {/* Action Button */}
-        <div>
-          <Link href={`/restaurants/${restaurant.slug}`} className="block">
-            <Button
-              variant={isVeg ? "veg" : "nonveg"}
-              size="lg"
-              className="w-full justify-between group-hover:shadow-md transition-all"
-            >
-              <span>Explore {isVeg ? "Veg" : "Non-Veg"} Menu</span>
-              <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
-            </Button>
-          </Link>
-        </div>
+        <Link
+          href={`/restaurants/${restaurant.slug}`}
+          className={cn(
+            "inline-flex w-full items-center justify-center gap-2 rounded-[15px] px-5 py-3.5 text-base font-extrabold text-white shadow-[0_10px_18px_rgba(24,24,24,0.18)] transition-transform hover:-translate-y-0.5",
+            buttonTone
+          )}
+        >
+          <span>Explore {isVeg ? "Veg" : "Non-Veg"} Menu</span>
+          <ArrowRight className="h-4 w-4" />
+        </Link>
       </div>
-    </div>
+    </article>
   );
 }
-

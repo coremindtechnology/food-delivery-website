@@ -12,6 +12,7 @@ import {
   PhoneCall,
   User,
   LogOut,
+  Truck,
 } from "lucide-react";
 import { RestaurantBadge } from "../restaurant/RestaurantBadge";
 import { MobileNav } from "./MobileNav";
@@ -33,54 +34,34 @@ export function Header() {
 
   return (
     <>
-      {/* Top Notification Announcement Bar */}
-      <div className="bg-charcoal-900 text-white text-xs py-2 px-4 border-b border-charcoal-800">
-        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-1.5 text-center sm:text-left">
-          <div className="flex items-center gap-2">
-            <span className="flex h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
-            <span className="text-white/90">
-              Two Separate Kitchens • 100% Segregated Utensils • Verified Pure Veg & Gourmet Non-Veg
-            </span>
-          </div>
-          <div className="flex items-center gap-4 text-white/75 text-[11px]">
-            <span className="hidden md:inline-flex items-center gap-1">
-              <MapPin className="w-3.5 h-3.5 text-primary-400" /> Metro Delivery Hub (Radius: 10 KM)
-            </span>
-            <span className="inline-flex items-center gap-1 text-primary-300 font-semibold">
-              <PhoneCall className="w-3 h-3" /> Support: +91 98765 43210
-            </span>
-          </div>
-        </div>
-      </div>
-
       {/* Main Navigation Header */}
-      <header className="sticky top-0 z-40 w-full border-b border-cream-200/80 bg-cream-50/95 backdrop-blur-md transition-all">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <header className="sticky top-0 z-40 w-full border-b border-[#ece7e1] bg-[#f7f4f1]/95 backdrop-blur-md transition-all shadow-[0_1px_0_rgba(17,18,21,0.08)]">
+        <div className="max-w-[1280px] mx-auto px-2 sm:px-4 lg:px-6">
           <div className="flex h-20 items-center justify-between gap-4">
             {/* Brand Logo */}
             <Link href="/" className="flex items-center gap-3 group flex-shrink-0">
-              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-primary-500 to-primary-600 text-white font-black text-xl shadow-soft group-hover:scale-105 transition-transform">
+              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-[#f78a2b] to-[#e55f22] text-white font-black text-xl shadow-[0_10px_20px_rgba(229,95,34,0.28)] group-hover:scale-105 transition-transform">
                 DK
               </div>
-              <div className="flex flex-col">
-                <span className="font-display text-lg font-bold tracking-tight text-charcoal-900 group-hover:text-primary-600 transition-colors">
+              <div className="flex flex-col leading-none">
+                <span className="font-display text-lg font-bold tracking-tight text-[#1f1d1a] group-hover:text-[#e55f22] transition-colors">
                   Dual Kitchens
                 </span>
-                <span className="text-[10px] font-medium uppercase tracking-wider text-charcoal-500">
+                <span className="text-[10px] font-medium uppercase tracking-[0.16em] text-[#6f6a64] mt-1">
                   Veg & Non-Veg Cloud Kitchens
                 </span>
               </div>
             </Link>
 
             {/* Middle Restaurant Quick Switcher & Nav Links */}
-            <nav className="hidden lg:flex items-center gap-1 bg-white/70 p-1 rounded-2xl border border-cream-300 shadow-sm">
+            <nav className="hidden lg:flex items-center gap-1 bg-[#f0eee9] p-1 rounded-full border border-[#e7e1d8] shadow-[inset_0_1px_0_rgba(255,255,255,0.7)]">
               <Link
                 href="/"
                 className={cn(
-                  "px-4 py-2 text-xs font-semibold rounded-xl transition-all",
+                  "px-4 py-2 text-[11px] font-semibold rounded-full transition-all",
                   pathname === "/"
-                    ? "bg-charcoal-900 text-white shadow-soft"
-                    : "text-charcoal-700 hover:text-charcoal-900 hover:bg-cream-100"
+                    ? "bg-[#191d22] text-white shadow-[0_6px_14px_rgba(17,18,21,0.18)]"
+                    : "text-[#3b3a36] hover:text-[#1f1d1a] hover:bg-white/60"
                 )}
               >
                 All Kitchens
@@ -89,10 +70,10 @@ export function Header() {
               <Link
                 href="/restaurants/veg"
                 className={cn(
-                  "flex items-center gap-2 px-4 py-2 text-xs font-semibold rounded-xl transition-all border",
+                  "flex items-center gap-2 px-4 py-2 text-[11px] font-semibold rounded-full transition-all border",
                   isVegSection
-                    ? "bg-veg-600 text-white border-veg-600 shadow-soft"
-                    : "text-charcoal-700 border-transparent hover:bg-veg-50 hover:text-veg-700"
+                    ? "bg-[#1d9c5d] text-white border-[#1d9c5d] shadow-[0_6px_14px_rgba(29,156,93,0.18)]"
+                    : "text-[#3b3a36] border-transparent hover:bg-white/60 hover:text-[#1d9c5d]"
                 )}
               >
                 <RestaurantBadge type="veg" size="sm" showLabel={false} />
@@ -102,10 +83,10 @@ export function Header() {
               <Link
                 href="/restaurants/non-veg"
                 className={cn(
-                  "flex items-center gap-2 px-4 py-2 text-xs font-semibold rounded-xl transition-all border",
+                  "flex items-center gap-2 px-4 py-2 text-[11px] font-semibold rounded-full transition-all border",
                   isNonVegSection
-                    ? "bg-nonveg-700 text-white border-nonveg-700 shadow-soft"
-                    : "text-charcoal-700 border-transparent hover:bg-nonveg-50 hover:text-nonveg-700"
+                    ? "bg-[#d63c2d] text-white border-[#d63c2d] shadow-[0_6px_14px_rgba(214,60,45,0.18)]"
+                    : "text-[#3b3a36] border-transparent hover:bg-white/60 hover:text-[#d63c2d]"
                 )}
               >
                 <RestaurantBadge type="non-veg" size="sm" showLabel={false} />
@@ -114,24 +95,37 @@ export function Header() {
             </nav>
 
             {/* Right Action Elements */}
-            <div className="flex items-center gap-2.5 sm:gap-3">
-              {/* Secondary story link */}
+            <div className="flex items-center gap-2 sm:gap-2.5">
+              <Link
+                href="/track-order"
+                className={cn(
+                  "inline-flex items-center gap-1.5 px-3 py-2 rounded-full text-[11px] font-bold transition-all border",
+                  pathname === "/track-order"
+                    ? "bg-[#0b3b24] text-white border-[#0b3b24] shadow-sm"
+                    : "text-[#282c3f] border-[#e7e1d8] bg-white/70 hover:bg-white hover:text-[#0b3b24] hover:border-[#c5decb]"
+                )}
+              >
+                <Truck className="w-3.5 h-3.5 text-[#0b512a]" />
+                <span className="hidden sm:inline">Order Tracking</span>
+                <span className="sm:hidden">Track</span>
+              </Link>
+
               <Link
                 href="/#about"
-                className="hidden xl:inline-block text-xs font-semibold text-charcoal-600 hover:text-primary-600 transition-colors px-2"
+                className="hidden xl:inline-flex items-center gap-1.5 text-[12px] font-medium text-[#4d4b47] hover:text-[#1f1d1a] transition-colors"
               >
+                <span className="h-2 w-2 rounded-full bg-[#f7b267]" />
                 Our Standards
               </Link>
 
-              {/* Customer Account Button */}
               {isAuthenticated && customer ? (
                 <div className="relative">
                   <button
                     type="button"
                     onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
-                    className="flex items-center gap-2 px-3 py-2 rounded-2xl border border-cream-300 hover:bg-cream-100 text-xs font-bold text-charcoal-800 transition-colors"
+                    className="flex items-center gap-2 px-3 py-2 rounded-full border border-[#e7e1d8] bg-white/60 hover:bg-white text-[11px] font-bold text-[#1f1d1a] transition-colors"
                   >
-                    <div className="w-6 h-6 rounded-full bg-primary-100 text-primary-700 flex items-center justify-center font-black text-xs">
+                    <div className="w-6 h-6 rounded-full bg-[#f8e3d3] text-[#d96c28] flex items-center justify-center font-black text-[10px]">
                       {customer.name?.charAt(0) || "U"}
                     </div>
                     <span className="hidden md:inline max-w-[100px] truncate">
@@ -140,12 +134,12 @@ export function Header() {
                   </button>
 
                   {isUserMenuOpen && (
-                    <div className="absolute right-0 mt-2 w-56 bg-white rounded-2xl shadow-xl border border-cream-200 py-2 z-50 animate-fade-in">
-                      <div className="px-4 py-2 border-b border-cream-100">
-                        <p className="text-xs font-bold text-charcoal-900 truncate">
+                    <div className="absolute right-0 mt-2 w-56 bg-white rounded-2xl shadow-xl border border-[#efe6df] py-2 z-50 animate-fade-in">
+                      <div className="px-4 py-2 border-b border-[#efe6df]">
+                        <p className="text-xs font-bold text-[#1f1d1a] truncate">
                           {customer.name || "Customer"}
                         </p>
-                        <p className="text-[11px] text-charcoal-500">
+                        <p className="text-[11px] text-[#6f6a64]">
                           +91 {customer.phone}
                         </p>
                       </div>
@@ -167,37 +161,35 @@ export function Header() {
                 <button
                   type="button"
                   onClick={() => openAuthModal()}
-                  className="hidden sm:inline-flex items-center gap-1.5 px-3 py-2 rounded-2xl border border-cream-300 hover:bg-cream-100 text-xs font-bold text-charcoal-800 transition-colors"
+                  className="hidden sm:inline-flex items-center gap-1.5 px-3 py-2 rounded-full border border-[#e7e1d8] bg-white/60 hover:bg-white text-[11px] font-bold text-[#1f1d1a] transition-colors"
                 >
-                  <User className="w-4 h-4 text-charcoal-600" />
+                  <User className="w-4 h-4 text-[#5a524d]" />
                   <span>Sign In</span>
                 </button>
               )}
 
-              {/* Cart Drawer Trigger */}
               <button
                 type="button"
                 onClick={() => setIsCartDrawerOpen(true)}
-                className="relative inline-flex items-center gap-2 px-3.5 py-2.5 rounded-2xl bg-primary-600 hover:bg-primary-700 text-white font-bold text-xs shadow-soft transition-all active:scale-95"
+                className="relative inline-flex items-center gap-2 px-3.5 py-2.5 rounded-full bg-gradient-to-r from-[#f39031] to-[#e55f22] hover:brightness-105 text-white font-bold text-[11px] shadow-[0_10px_20px_rgba(229,95,34,0.24)] transition-all active:scale-95"
                 aria-label="View Cart"
               >
                 <ShoppingBag className="w-4 h-4" />
                 <span className="hidden sm:inline">Cart</span>
                 {totalItems > 0 && (
-                  <span className="flex items-center justify-center bg-white text-primary-700 text-[11px] font-black h-5 w-5 rounded-full shadow-xs">
+                  <span className="flex items-center justify-center bg-white text-[#d96c28] text-[10px] font-black h-5 w-5 rounded-full shadow-xs">
                     {totalItems}
                   </span>
                 )}
               </button>
 
-              {/* Mobile Menu Hamburger */}
               <button
                 type="button"
                 onClick={() => setIsMobileMenuOpen(true)}
-                className="lg:hidden rounded-2xl border border-cream-300 p-2.5 text-charcoal-700 hover:bg-cream-200 focus:outline-none"
+                className="lg:hidden rounded-full border border-[#e7e1d8] bg-white/60 p-2.5 text-[#1f1d1a] hover:bg-white focus:outline-none"
                 aria-label="Open mobile menu"
               >
-                <Menu className="w-6 h-6" />
+                <Menu className="w-5 h-5" />
               </button>
             </div>
           </div>
@@ -212,4 +204,3 @@ export function Header() {
     </>
   );
 }
-

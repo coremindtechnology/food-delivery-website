@@ -23,9 +23,9 @@ export function Notification({
 }: NotificationProps) {
   const styles = {
     success: {
-      bg: "bg-emerald-50 border-emerald-200 text-emerald-900",
-      icon: <CheckCircle2 className="w-5 h-5 text-emerald-600 flex-shrink-0" />,
-      closeBtn: "text-emerald-700 hover:bg-emerald-100",
+      bg: "bg-success-50 border-success-200 text-success-900",
+      icon: <CheckCircle2 className="w-5 h-5 text-success-600 flex-shrink-0" />,
+      closeBtn: "text-success-700 hover:bg-success-100",
     },
     error: {
       bg: "bg-red-50 border-red-200 text-red-900",
@@ -77,4 +77,3 @@ export function Notification({
     </div>
   );
 }
-

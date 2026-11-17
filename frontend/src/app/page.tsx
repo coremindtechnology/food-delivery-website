@@ -16,9 +16,10 @@ import {
   Mail,
   MapPin,
   Send,
+  ShoppingCart,
+  Check,
 } from "lucide-react";
 import { SAMPLE_RESTAURANTS } from "@/data/restaurants";
-import { SAMPLE_FOODS, CATEGORIES } from "@/data/foods";
 import { RestaurantCard } from "@/components/restaurant/RestaurantCard";
 import { FoodCard } from "@/components/food/FoodCard";
 import { FoodCategoryFilter } from "@/components/food/FoodCategoryFilter";
@@ -28,24 +29,43 @@ import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Notification } from "@/components/ui/Notification";
 import { FoodItem, CartItem } from "@/types";
+import { useMenuCatalog } from "@/lib/use-menu-catalog";
+import { useCart } from "@/context/CartContext";
+import { FloatingLeaf } from "@/components/home/FloatingLeaf";
 
 export default function HomePage() {
+  const { foods, categories: catalogCategories, loading: menuLoading, error: menuError } = useMenuCatalog("all");
+  const { setIsCartDrawerOpen, totalItems } = useCart();
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [activeKitchenFilter, setActiveKitchenFilter] = useState<"all" | "veg" | "non-veg">("all");
+  const [showAllFoodItems, setShowAllFoodItems] = useState(false);
+  const [showAllCategories, setShowAllCategories] = useState(false);
   const [contactSubmitted, setContactSubmitted] = useState(false);
-  const [promoApplied, setPromoApplied] = useState(false);
   const [cartAlert, setCartAlert] = useState<string | null>(null);
   const [customizingFood, setCustomizingFood] = useState<FoodItem | null>(null);
 
   // Filter foods based on category & kitchen selection (excluding unavailable items)
-  const filteredFoods = SAMPLE_FOODS.filter((food) => {
-    if (food.available === false) return false;
+  const filteredFoods = foods.filter((food) => {
+    if (!food.available) return false;
     const matchesCategory =
       selectedCategory === "all" || food.category === selectedCategory;
     const matchesKitchen =
       activeKitchenFilter === "all" || food.restaurantSlug === activeKitchenFilter;
     return matchesCategory && matchesKitchen;
   });
+  const foodDisplayLimit = activeKitchenFilter === "all" ? 8 : 4;
+  const visibleFoods = showAllFoodItems ? filteredFoods : filteredFoods.slice(0, foodDisplayLimit);
+  const categoriesBySlug = new Map<string, (typeof catalogCategories)[number]>();
+  for (const category of catalogCategories) {
+    const existing = categoriesBySlug.get(category.slug);
+    categoriesBySlug.set(
+      category.slug,
+      existing
+        ? { ...existing, itemCount: existing.itemCount + category.itemCount, restaurantType: "both" }
+        : category
+    );
+  }
+  const categories = [...categoriesBySlug.values()];
 
   const vegRestaurant = SAMPLE_RESTAURANTS.find((r) => r.slug === "veg")!;
   const nonVegRestaurant = SAMPLE_RESTAURANTS.find((r) => r.slug === "non-veg")!;
@@ -72,7 +92,8 @@ export default function HomePage() {
   };
 
   return (
-    <div className="space-y-16 lg:space-y-24 pb-20">
+    <div className="space-y-6 pb-20 bg-[#FAF7F0] lg:space-y-12">
+      {menuError && <p role="status" className="mx-auto max-w-7xl px-4 pt-4 text-sm text-amber-800">{menuError}</p>}
       {/* Item Customizer Modal */}
       <FoodCustomizerModal
         food={customizingFood}
@@ -92,131 +113,154 @@ export default function HomePage() {
         </div>
       )}
 
-      {/* 1. HERO SECTION */}
-      <section className="relative overflow-hidden bg-gradient-to-b from-cream-100 via-cream-50 to-cream-100 pt-10 pb-16 lg:pt-16 lg:pb-24 border-b border-cream-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
-            {/* Left Content */}
-            <div className="lg:col-span-7 space-y-6 text-center lg:text-left">
-              {/* Trust Badge */}
-              <div className="inline-flex items-center gap-2 rounded-full bg-white px-4 py-2 border border-cream-300 shadow-soft">
-                <span className="flex h-2.5 w-2.5 rounded-full bg-primary-500" />
-                <span className="text-xs font-semibold text-charcoal-700 tracking-wide uppercase">
-                  Two Dedicated Kitchens • One Seamless Platform
-                </span>
-              </div>
+      {/* 1. HERO SECTION (Matching User Design: Exact Dark Theme, Leaves, Typography & Scroll-Rotating Plate) */}
+      <section className="relative overflow-hidden bg-[#111215] text-white pt-8 pb-8 lg:pt-14 lg:pb-12 border-b border-white/10 selection:bg-[#25c255] selection:text-black">
+        {/* Ambient background glows */}
+        <div className="absolute top-0 left-1/4 w-96 h-96 bg-[#25c255]/5 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-red-600/5 rounded-full blur-3xl pointer-events-none" />
 
-              {/* Primary Heading */}
-              <h1 className="font-display text-4xl sm:text-5xl lg:text-6xl font-extrabold text-charcoal-900 tracking-tight leading-[1.15]">
-                Delicious Food, <br className="hidden sm:inline" />
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary-600 via-primary-500 to-amber-600">
-                  Delivered to Your Door
-                </span>
-              </h1>
+        {/* Floating background leaves positioned according to reference image */}
+        {/* Top-left cluster leaves */}
+        <FloatingLeaf
+          size={56}
+          rotation={22}
+          delay={0}
+          duration={6}
+          className="top-2 left-4 sm:top-6 sm:left-10"
+        />
+        <FloatingLeaf
+          size={34}
+          rotation={-35}
+          delay={1.5}
+          duration={5.4}
+          className="top-14 left-16 sm:top-20 sm:left-28 opacity-85"
+        />
+        {/* Top middle-right leaf */}
+        <FloatingLeaf
+          size={42}
+          rotation={-25}
+          delay={0.8}
+          duration={7}
+          className="top-4 left-1/2 -translate-x-1/2 sm:left-[48%]"
+        />
+        {/* Far-right leaves */}
+        <FloatingLeaf
+          size={38}
+          rotation={40}
+          delay={2.1}
+          duration={6.2}
+          className="top-8 right-6 sm:top-12 sm:right-16"
+        />
+        <FloatingLeaf
+          size={36}
+          rotation={-50}
+          delay={1.2}
+          duration={6.8}
+          className="bottom-16 right-4 sm:bottom-24 sm:right-12"
+        />
+        {/* Lower-left leaf near description text */}
+        <FloatingLeaf
+          size={34}
+          rotation={-18}
+          delay={1.7}
+          duration={5.8}
+          className="bottom-28 left-[38%] hidden sm:block"
+        />
 
-              {/* Subheading */}
-              <p className="text-base sm:text-lg text-charcoal-600 max-w-2xl mx-auto lg:mx-0 leading-relaxed">
-                Whether you crave 100% Pure Vegetarian heritage recipes prepared with pure desi ghee or succulent charcoal-grilled non-veg curries & biryanis, our two dedicated culinary kitchens have you covered.
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-20">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
+            {/* Left Column: Typography, Subtitle & Action Controls */}
+            <div className="lg:col-span-6 space-y-2 text-left">
+              {/* Cursive "Discover Our" */}
+              <p className="font-script text-4xl sm:text-5xl lg:text-6xl text-[#e8903c] italic leading-tight tracking-wide select-none">
+                Discover Our
               </p>
 
-              {/* Quick Restaurant CTA Buttons */}
-              <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4 pt-2">
-                <Link href="/restaurants/veg" className="w-full sm:w-auto">
-                  <Button
-                    variant="veg"
-                    size="lg"
-                    className="w-full sm:w-auto px-6 py-3.5 text-base shadow-lift"
-                  >
-                    <RestaurantBadge type="veg" size="sm" showLabel={false} />
-                    <span>Explore Veg Kitchen</span>
-                    <ArrowRight className="w-4 h-4 ml-1" />
-                  </Button>
-                </Link>
+              {/* Bold "Delicious" in Neon Green */}
+              <h1 className="text-5xl sm:text-6xl lg:text-7xl xl:text-8xl font-black text-[#25c255] tracking-tight leading-[0.95] uppercase">
+                Delicious
+              </h1>
 
-                <Link href="/restaurants/non-veg" className="w-full sm:w-auto">
-                  <Button
-                    variant="nonveg"
-                    size="lg"
-                    className="w-full sm:w-auto px-6 py-3.5 text-base shadow-lift"
-                  >
-                    <RestaurantBadge type="non-veg" size="sm" showLabel={false} />
-                    <span>Explore Non-Veg Kitchen</span>
-                    <ArrowRight className="w-4 h-4 ml-1" />
-                  </Button>
+              {/* Bold "Food Menu" in Crisp White */}
+              <h2 className="text-5xl sm:text-6xl lg:text-7xl xl:text-8xl font-black text-white tracking-tight leading-[1] uppercase pt-1 pb-4">
+                Food Menu
+              </h2>
+
+              {/* Subtitle description */}
+              <p className="text-sm sm:text-base text-gray-400 max-w-md leading-relaxed pb-6">
+                  Enjoy delicious dhaba-style food, freshly prepared with authentic spices and flavors.
+              </p>
+
+              {/* Order Now Button */}
+              <div>
+                <Link
+                  href="#restaurants"
+                  className="rounded-full border border-white/60 hover:border-white text-white font-medium text-xs sm:text-sm px-7 py-3 transition-all duration-200 hover:bg-white/10 active:scale-95 inline-flex items-center gap-2 shadow-sm"
+                >
+                  <Check className="w-4 h-4 text-[#25c255]" />
+                  <span>Order Now</span>
                 </Link>
               </div>
 
-              {/* Key Highlights */}
-              <div className="pt-6 border-t border-cream-300 grid grid-cols-3 gap-4 text-center lg:text-left">
-                <div>
-                  <p className="text-xl sm:text-2xl font-black text-charcoal-900">100%</p>
-                  <p className="text-xs text-charcoal-500 font-medium">Segregated Kitchens</p>
-                </div>
-                <div>
-                  <p className="text-xl sm:text-2xl font-black text-charcoal-900">30 Min</p>
-                  <p className="text-xs text-charcoal-500 font-medium">Average Delivery</p>
-                </div>
-                <div>
-                  <p className="text-xl sm:text-2xl font-black text-charcoal-900">4.9 ★</p>
-                  <p className="text-xs text-charcoal-500 font-medium">3,300+ Reviews</p>
-                </div>
+              {/* Bottom Interactive Controls Bar */}
+              <div className="flex items-center gap-3 pt-6 sm:pt-10">
+                <button
+                  type="button"
+                  onClick={() => setIsCartDrawerOpen(true)}
+                  className="w-10 h-10 rounded-full border border-white/60 hover:border-white text-white flex items-center justify-center transition-all duration-150 hover:bg-white/10 active:scale-90 relative"
+                  title="View cart"
+                  aria-label="View cart"
+                >
+                  <ShoppingCart className="w-4 h-4" />
+                  {totalItems > 0 && (
+                    <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-600 rounded-full text-[10px] flex items-center justify-center font-bold text-white animate-pulse">
+                      {totalItems}
+                    </span>
+                  )}
+                </button>
+
+                <a
+                  href="#food-menu"
+                  className="inline-flex items-center justify-center bg-[#e03b3b] hover:bg-[#c92a2a] text-white font-bold text-xs sm:text-sm px-7 py-2.5 rounded-full transition-all duration-200 shadow-lg shadow-red-900/40 active:scale-95 ml-1"
+                >
+                  View More
+                </a>
+              </div>
+
+              {/* Kitchen quick navigation pills */}
+              <div className="pt-6 flex flex-wrap items-center gap-3">
+                <span className="text-xs text-white/50 uppercase tracking-wider font-semibold">Kitchens:</span>
+                <Link
+                  href="/restaurants/veg"
+                  className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-950/80 text-emerald-400 border border-emerald-500/40 hover:bg-emerald-900/90 transition-all"
+                >
+                  <span className="w-2 h-2 rounded-full bg-emerald-400" />
+                  100% Pure Veg Kitchen
+                </Link>
+                <Link
+                  href="/restaurants/non-veg"
+                  className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-red-950/80 text-red-400 border border-red-500/40 hover:bg-red-900/90 transition-all"
+                >
+                  <span className="w-2 h-2 rounded-full bg-red-400" />
+                  Charcoal Non-Veg Kitchen
+                </Link>
               </div>
             </div>
 
-            {/* Right Hero Image Composition */}
-            <div className="lg:col-span-5 relative">
-              <div className="relative mx-auto max-w-md lg:max-w-none">
-                {/* Decorative blob backdrop */}
-                <div className="absolute -inset-4 bg-gradient-to-tr from-primary-200/50 via-cream-300/40 to-veg-200/40 rounded-3xl blur-2xl -z-10" />
-
-                {/* Hero Dish Image Card */}
-                <div className="relative overflow-hidden rounded-3xl bg-white p-3 shadow-lift border border-cream-300">
-                  <div className="relative h-80 sm:h-96 w-full overflow-hidden rounded-2xl">
-                    <Image
-                      src="https://images.unsplash.com/photo-1546833999-b9f581a1996d?auto=format&fit=crop&w=1000&q=80"
-                      alt="Gourmet Dining Platter"
-                      fill
-                      priority
-                      className="object-cover"
-                      sizes="(max-width: 768px) 100vw, 500px"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-charcoal-900/60 via-transparent to-transparent" />
-
-                    <div className="absolute bottom-4 left-4 right-4 text-white">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="rounded-md bg-veg-600 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider">
-                          Pure Veg
-                        </span>
-                        <span className="rounded-md bg-nonveg-700 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider">
-                          Non-Veg Grill
-                        </span>
-                      </div>
-                      <p className="font-display text-xl font-bold">Two Kitchens, Zero Compromise</p>
-                      <p className="text-xs text-white/80">Crafted by master chefs with fresh spices</p>
-                    </div>
-                  </div>
-
-                  {/* Floating floating card 1 */}
-                  <div className="absolute -bottom-5 -left-5 bg-white rounded-2xl p-3 shadow-lift border border-cream-200 flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-veg-100 flex items-center justify-center text-veg-700">
-                      <ShieldCheck className="w-6 h-6" />
-                    </div>
-                    <div>
-                      <p className="text-xs font-bold text-charcoal-900">Purity Certified</p>
-                      <p className="text-[10px] text-charcoal-500">Zero Cross-Contact</p>
-                    </div>
-                  </div>
-
-                  {/* Floating floating card 2 */}
-                  <div className="absolute -top-4 -right-4 bg-white rounded-2xl p-3 shadow-lift border border-cream-200 flex items-center gap-2.5">
-                    <div className="w-9 h-9 rounded-xl bg-amber-100 flex items-center justify-center text-amber-600">
-                      <Flame className="w-5 h-5" />
-                    </div>
-                    <div>
-                      <p className="text-xs font-bold text-charcoal-900">Charcoal Smoky</p>
-                      <p className="text-[10px] text-charcoal-500">Live Tandoor Fire</p>
-                    </div>
-                  </div>
+            {/* Right Column: Hero Food Image */}
+            <div className="lg:col-span-6 flex items-center justify-center relative pt-4 lg:pt-0">
+              <div className="relative w-full max-w-[520px] aspect-square">
+                <div className="absolute inset-0 rounded-full bg-gradient-to-tr from-amber-500/10 via-red-500/10 to-transparent blur-3xl opacity-60" />
+                <div className="absolute inset-[8%] rounded-full bg-black/80 blur-2xl translate-y-6" />
+                <div className="relative z-10 h-full w-full">
+                  <Image
+                    src="/hero-plate.png"
+                    alt="Discover Our Delicious Food Menu"
+                    fill
+                    priority
+                    sizes="(max-width: 768px) 80vw, 520px"
+                    className="object-contain pointer-events-none select-none"
+                  />
                 </div>
               </div>
             </div>
@@ -225,121 +269,204 @@ export default function HomePage() {
       </section>
 
       {/* 2. RESTAURANT SELECTION SECTION */}
-      <section id="restaurants" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center max-w-3xl mx-auto mb-12 space-y-3">
-          <div className="inline-flex items-center gap-1.5 rounded-full bg-cream-200 px-3.5 py-1 text-xs font-semibold text-charcoal-700">
-            <UtensilsCrossed className="w-3.5 h-3.5 text-primary-500" />
-            <span>Select Your Restaurant</span>
-          </div>
-          <h2 className="font-display text-3xl sm:text-4xl font-bold text-charcoal-900">
-            Two Distinct Kitchens, Uncompromised Flavors
-          </h2>
-          <p className="text-sm sm:text-base text-charcoal-600">
-            Both kitchens run independently with dedicated master chefs, specific cookware, and separate dispatch counters to guarantee absolute authenticity.
-          </p>
+      <section id="restaurants" className="relative overflow-hidden bg-[#FAF7F0] pt-4 pb-12 sm:pt-4 sm:pb-16">
+        <div className="pointer-events-none absolute inset-0 overflow-hidden">
+          <FloatingLeaf size={64} rotation={18} delay={0.5} duration={7} className="-left-2 top-6 sm:left-4" />
+          <FloatingLeaf size={44} rotation={-32} delay={1.2} duration={6} className="left-12 top-20 opacity-80" />
+          <FloatingLeaf size={72} rotation={-18} delay={1.8} duration={8} className="right-2 top-7 sm:right-10" />
+          <FloatingLeaf size={50} rotation={34} delay={0.8} duration={7.5} className="right-16 bottom-6 opacity-80" />
+          <FloatingLeaf size={40} rotation={-40} delay={1.5} duration={5.8} className="left-[36%] bottom-10 hidden sm:block opacity-80" />
         </div>
 
-        {/* The Two Restaurant Cards Side by Side */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-10">
-          <RestaurantCard restaurant={vegRestaurant} priority />
-          <RestaurantCard restaurant={nonVegRestaurant} priority />
+        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center max-w-4xl mx-auto mb-10 space-y-4">
+            <div className="inline-flex items-center gap-2 rounded-full border border-[#d7a35f] bg-[#faeed8] px-4 py-2 shadow-[0_2px_0_#d89a52]">
+              <div className="flex items-center justify-center gap-1.5 text-[#d77d2d]">
+                <span className="text-xl leading-none">✦</span>
+                <span className="text-xl leading-none">✦</span>
+              </div>
+              <span className="text-xs font-bold uppercase tracking-[0.2em] text-[#6b4a1c]">Select Your Restaurant</span>
+            </div>
+            <h2 className="font-display text-[2.2rem] sm:text-5xl lg:text-[4.1rem] font-black leading-[1.05] tracking-[-0.04em] text-[#2e1e13]">
+              Two Distinct Kitchens, Uncompromised <span className="relative inline-block whitespace-nowrap">Flavors<span className="absolute left-0 right-0 -bottom-1 h-3 rounded-full bg-[#f6d772] opacity-90" /></span>
+            </h2>
+            <p className="mx-auto max-w-3xl text-sm sm:text-base lg:text-lg text-[#5a4031] leading-relaxed">
+              Both kitchens run independently with dedicated master chefs, specific cookware, and separate dispatch counters to guarantee absolute authenticity.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-10">
+            <RestaurantCard restaurant={vegRestaurant} priority />
+            <RestaurantCard restaurant={nonVegRestaurant} priority />
+          </div>
         </div>
       </section>
 
       {/* 3. PROMOTIONAL BANNER */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-primary-600 via-primary-500 to-amber-600 p-8 sm:p-12 text-white shadow-xl">
-          <div className="relative z-10 max-w-2xl space-y-4">
-            <div className="inline-flex items-center gap-2 rounded-xl bg-white/20 px-3 py-1 text-xs font-semibold backdrop-blur-sm">
-              <Sparkles className="w-4 h-4 text-amber-200" />
-              <span>Special Introductory Offer</span>
-            </div>
-            <h3 className="font-display text-2xl sm:text-4xl font-bold tracking-tight">
-              Enjoy Flat 20% OFF on Your First Dual Kitchen Order
-            </h3>
-            <p className="text-sm sm:text-base text-white/90 leading-relaxed">
-              Order your favorite biryanis, paneer specialties, kebabs, or curries. Use the promotional coupon at checkout to save on both menus.
-            </p>
-
-            <div className="pt-2 flex flex-wrap items-center gap-3">
-              <div className="flex items-center gap-2 bg-charcoal-900/40 rounded-xl px-4 py-2.5 border border-white/20">
-                <span className="text-xs uppercase tracking-wider text-white/80">Code:</span>
-                <span className="font-mono text-sm font-bold tracking-widest text-amber-300">
-                  DUAL20
-                </span>
+        <div className="overflow-hidden rounded-3xl bg-gradient-to-r from-amber-400 to-yellow-300 px-6 py-7 shadow-lg sm:px-10 sm:py-8 lg:px-12">
+          <div className="grid items-center gap-3 sm:grid-cols-[1.1fr_0.9fr] sm:gap-6">
+            <div className="relative z-10 space-y-3 sm:space-y-4">
+              <div className="inline-flex items-center gap-2 text-[10px] font-extrabold uppercase tracking-[0.12em] text-charcoal-900 sm:text-xs">
+                <span className="h-1 w-7 rounded-full bg-primary-700" />
+                <span>Special Introductory Offer</span>
               </div>
-              <button
-                type="button"
-                onClick={() => setPromoApplied(true)}
-                className="rounded-xl bg-white px-5 py-2.5 text-xs font-bold text-primary-600 shadow-md hover:bg-cream-100 transition-all active:scale-95"
-              >
-                {promoApplied ? "Coupon Copied!" : "Copy Code"}
-              </button>
-            </div>
-          </div>
+              <h3 className="font-display text-3xl font-extrabold leading-[1.05] tracking-tight text-charcoal-900 sm:text-5xl">
+                Get 20% Off
+                <span className="mt-1 block text-2xl sm:text-4xl">on Your First Order</span>
+              </h3>
+              <p className="text-sm font-semibold text-charcoal-800 sm:text-base">
+                Use code: <span className="font-extrabold">DUAL20</span> at checkout.
+              </p>
 
-          {/* Decorative watermark */}
-          <div className="absolute -right-8 -bottom-10 opacity-15 pointer-events-none text-[160px] font-black font-display leading-none text-white select-none hidden md:block">
-            20%
+              <Link
+                href="#food-menu"
+                className="inline-flex items-center gap-2 rounded-xl bg-veg-800 px-5 py-2.5 text-xs font-bold text-white shadow-md transition-all hover:bg-veg-700 active:scale-95 sm:text-sm"
+              >
+                Order Now
+                <ArrowRight className="h-4 w-4" />
+              </Link>
+            </div>
+            <div className="relative -mb-7 -mr-6 h-52 sm:-mb-8 sm:-mr-10 sm:h-60 lg:-mr-12 lg:h-64">
+              <Image
+                src="/offer-dhaba-feast.png"
+                alt="Indian curry, naan, and chai"
+                fill
+                sizes="(min-width: 1024px) 500px, (min-width: 640px) 45vw, 90vw"
+                className="translate-y-1 object-contain object-center drop-shadow-[0_20px_14px_rgba(0,0,0,0.4)] sm:translate-y-2 sm:object-right"
+              />
+            </div>
           </div>
         </div>
       </section>
 
       {/* 4. POPULAR CATEGORIES */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8">
+        <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-6">
           <div>
+            <div className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.16em] text-veg-700 mb-2">
+              <Sparkles className="w-3 h-3" />
+              <span>Our Specialties</span>
+            </div>
             <h2 className="font-display text-2xl sm:text-3xl font-bold text-charcoal-900">
               Popular Categories
             </h2>
             <p className="text-xs sm:text-sm text-charcoal-500 mt-1">
-              Explore freshly prepared dishes crafted by our specialized kitchen teams.
+              Explore our most-loved food categories and find your perfect meal.
             </p>
           </div>
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-medium text-charcoal-500">Categories from:</span>
-            <span className="text-xs font-bold text-veg-700 bg-veg-50 px-2 py-0.5 rounded-md border border-veg-200">
-              Veg
-            </span>
-            <span className="text-xs font-bold text-nonveg-700 bg-nonveg-50 px-2 py-0.5 rounded-md border border-nonveg-200">
-              Non-Veg
-            </span>
-          </div>
+          {categories.length > 6 && (
+            <button
+              type="button"
+              onClick={() => setShowAllCategories((showAll) => !showAll)}
+              aria-expanded={showAllCategories}
+              className="inline-flex items-center gap-2 text-xs font-semibold text-charcoal-800 transition-colors hover:text-veg-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-veg-600 focus-visible:ring-offset-4"
+            >
+              {showAllCategories ? "Show Less" : "View All Categories"}
+              <ArrowRight className={`h-4 w-4 transition-transform ${showAllCategories ? "-rotate-90" : ""}`} />
+            </button>
+          )}
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
-          {CATEGORIES.map((cat) => (
-            <div
-              key={cat.id}
-              onClick={() => setSelectedCategory(cat.slug)}
-              className={`group cursor-pointer flex flex-col items-center text-center p-3.5 rounded-2xl border transition-all duration-200 bg-white shadow-sm hover:shadow-md hover:-translate-y-1 ${
-                selectedCategory === cat.slug
-                  ? "border-primary-500 ring-2 ring-primary-500/20"
-                  : "border-cream-300 hover:border-primary-300"
-              }`}
-            >
-              <div className="relative w-20 h-20 rounded-xl overflow-hidden mb-3 bg-cream-200">
-                <Image
-                  src={cat.image}
-                  alt={cat.name}
-                  fill
-                  sizes="80px"
-                  className="object-cover group-hover:scale-110 transition-transform duration-300"
-                />
-              </div>
-              <h4 className="text-xs font-bold text-charcoal-900 group-hover:text-primary-600 transition-colors">
-                {cat.name}
-              </h4>
-              <span className="text-[11px] text-charcoal-500 mt-0.5">
-                {cat.itemCount} items
-              </span>
-            </div>
-          ))}
+        <div aria-label="Popular food categories" className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
+          {(showAllCategories ? categories : categories.slice(0, 6)).map((cat) => {
+            const isSelected = selectedCategory === cat.slug;
+            return (
+              <button
+                key={cat.id}
+                type="button"
+                onClick={() => setSelectedCategory(cat.slug)}
+                aria-label={`${cat.name}, ${cat.itemCount} dishes`}
+                aria-pressed={isSelected}
+                className={`group flex min-w-0 flex-col items-center rounded-2xl p-2.5 text-center transition-all duration-300 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-veg-500/40 sm:p-3 ${
+                  isSelected
+                    ? "bg-veg-800 text-white shadow-lg shadow-veg-900/15"
+                    : "bg-white text-charcoal-900 shadow-sm ring-1 ring-black/5 hover:-translate-y-1 hover:bg-veg-800 hover:text-white hover:shadow-lg hover:shadow-veg-900/15 hover:ring-veg-800"
+                }`}
+              >
+                <span className="relative block aspect-square w-full overflow-hidden rounded-xl">
+                  <Image
+                    src={cat.image}
+                    alt=""
+                    fill
+                    sizes="(min-width: 1024px) 180px, (min-width: 640px) 30vw, 45vw"
+                    className="object-cover transition-transform duration-500 group-hover:scale-105"
+                  />
+                </span>
+                <span className="mt-2.5 line-clamp-1 text-xs font-bold sm:text-sm">{cat.name}</span>
+                <span className={`mt-1 text-[10px] sm:text-xs ${isSelected ? "text-white/75" : "text-charcoal-500 group-hover:text-white/75"}`}>
+                  {cat.itemCount} dishes
+                </span>
+                <span
+                  aria-hidden="true"
+                  className={`mt-2 inline-flex h-7 w-7 items-center justify-center rounded-full transition-colors ${
+                    isSelected
+                      ? "bg-amber-400 text-veg-900"
+                      : "text-charcoal-700 group-hover:bg-amber-400 group-hover:text-veg-900"
+                  }`}
+                >
+                  <ArrowRight className="h-4 w-4" />
+                </span>
+              </button>
+            );
+          })}
         </div>
       </section>
 
-      {/* 5. FEATURED FOOD SECTION */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      {/* 5. WHY CHOOSE US */}
+      <section className="relative overflow-hidden border-y border-emerald-950/30 bg-[#063b2a] text-white">
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_80%_50%,rgba(34,197,94,0.12),transparent_55%)]" />
+        <div className="relative mx-auto grid max-w-7xl items-center gap-8 px-4 py-12 sm:px-6 lg:grid-cols-2 lg:gap-10 lg:px-8 lg:py-16">
+          <div className="relative mx-auto flex aspect-square w-full max-w-[480px] items-center justify-center">
+            <div className="absolute inset-[8%] rounded-full border border-amber-400/25" />
+            <div className="absolute inset-[14%] rounded-full bg-emerald-300/10 blur-2xl" />
+            <Image
+              src="/why-choose-pasta.png"
+              alt="Penne pasta with tomato, basil, and parmesan"
+              fill
+              sizes="(min-width: 1024px) 480px, 90vw"
+              className="object-contain drop-shadow-[0_20px_28px_rgba(0,0,0,0.45)]"
+            />
+          </div>
+
+          <div>
+            <div className="mb-3 inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.18em] text-amber-300 sm:text-sm">
+              <span className="h-1 w-7 rounded-full bg-amber-400" />
+              <span>Why Choose Us</span>
+            </div>
+            <h2 className="font-display text-4xl font-extrabold leading-tight sm:text-5xl">
+              Fresh Food
+              <span className="block">Better Life</span>
+            </h2>
+            <p className="mt-4 max-w-xl text-base leading-relaxed text-white/75 sm:text-lg">
+              We are committed to delivering delicious and healthy meals made from fresh ingredients.
+              Enjoy a better food experience with every order.
+            </p>
+
+            <div className="mt-7 grid grid-cols-2 gap-5 sm:grid-cols-4 sm:gap-3">
+              {[
+                { label: <>Fresh<br />Ingredients</>, Icon: CheckCircle2 },
+                { label: <>Quality<br />Meals</>, Icon: UtensilsCrossed },
+                { label: <>On Time<br />Delivery</>, Icon: Clock },
+                { label: <>24/7<br />Support</>, Icon: Phone },
+              ].map(({ label, Icon }, index) => (
+                <div key={index} className="flex flex-col items-center text-center">
+                  <span className="mb-2 flex h-12 w-12 items-center justify-center rounded-full border border-amber-400/80 text-amber-300">
+                    <Icon className="h-6 w-6" />
+                  </span>
+                  <span className="text-sm font-semibold leading-tight text-white/90">
+                    {label}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* 6. FEATURED FOOD SECTION */}
+      <section id="food-menu" className="bg-[#F1F5E9] py-2 sm:py-3">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-6">
           <div>
             <div className="inline-flex items-center gap-1.5 text-xs font-bold text-primary-600 uppercase tracking-wider mb-1">
@@ -358,7 +485,10 @@ export default function HomePage() {
           <div className="flex items-center gap-1.5 p-1 bg-white rounded-2xl border border-cream-300 shadow-sm">
             <button
               type="button"
-              onClick={() => setActiveKitchenFilter("all")}
+              onClick={() => {
+                setActiveKitchenFilter("all");
+                setShowAllFoodItems(false);
+              }}
               className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${
                 activeKitchenFilter === "all"
                   ? "bg-charcoal-900 text-white"
@@ -369,7 +499,10 @@ export default function HomePage() {
             </button>
             <button
               type="button"
-              onClick={() => setActiveKitchenFilter("veg")}
+              onClick={() => {
+                setActiveKitchenFilter("veg");
+                setShowAllFoodItems(false);
+              }}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${
                 activeKitchenFilter === "veg"
                   ? "bg-veg-600 text-white"
@@ -381,7 +514,10 @@ export default function HomePage() {
             </button>
             <button
               type="button"
-              onClick={() => setActiveKitchenFilter("non-veg")}
+              onClick={() => {
+                setActiveKitchenFilter("non-veg");
+                setShowAllFoodItems(false);
+              }}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${
                 activeKitchenFilter === "non-veg"
                   ? "bg-nonveg-700 text-white"
@@ -397,16 +533,21 @@ export default function HomePage() {
         {/* Category Filters Bar */}
         <div className="mb-8">
           <FoodCategoryFilter
-            categories={CATEGORIES}
+            categories={categories}
             selectedCategory={selectedCategory}
-            onSelectCategory={setSelectedCategory}
+            onSelectCategory={(category) => {
+              setSelectedCategory(category);
+              setShowAllFoodItems(false);
+            }}
           />
         </div>
 
         {/* Food Items Grid */}
-        {filteredFoods.length > 0 ? (
+        {menuLoading ? (
+          <p className="py-12 text-center text-sm text-charcoal-500">Loading the latest menu...</p>
+        ) : filteredFoods.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {filteredFoods.map((food) => (
+            {visibleFoods.map((food) => (
               <FoodCard
                 key={food.id}
                 food={food}
@@ -436,10 +577,33 @@ export default function HomePage() {
             </button>
           </div>
         )}
+        {!menuLoading && filteredFoods.length > foodDisplayLimit && (
+          <div className="mt-8 flex justify-center">
+            {activeKitchenFilter === "all" ? (
+              <Button
+                type="button"
+                variant="outline"
+                aria-expanded={showAllFoodItems}
+                onClick={() => setShowAllFoodItems((showAll) => !showAll)}
+              >
+                {showAllFoodItems ? "Show fewer" : `View all ${filteredFoods.length} items`}
+              </Button>
+            ) : (
+              <Link
+                href={`/restaurants/${activeKitchenFilter}`}
+                className="inline-flex h-11 items-center gap-2 rounded-xl border-2 border-charcoal-700/20 bg-white/60 px-5 text-sm font-medium text-charcoal-800 transition-all hover:border-charcoal-800 hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-charcoal-700 focus-visible:ring-offset-2"
+              >
+                View all {activeKitchenFilter === "veg" ? "Veg" : "Non-Veg"} items
+                <ArrowRight className="h-4 w-4" />
+              </Link>
+            )}
+          </div>
+        )}
+        </div>
       </section>
 
       {/* 6. ABOUT SECTION */}
-      <section id="about" className="bg-white border-y border-cream-300 py-16 lg:py-24">
+      <section id="about" className="bg-white border-y border-cream-300 py-8 sm:py-10 lg:py-14">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
             {/* Visual Grid */}
@@ -484,7 +648,7 @@ export default function HomePage() {
             {/* Content */}
             <div className="lg:col-span-7 space-y-6">
               <div className="inline-flex items-center gap-2 rounded-full bg-cream-200 px-3.5 py-1 text-xs font-semibold text-charcoal-800">
-                <ShieldCheck className="w-4 h-4 text-emerald-600" />
+                <ShieldCheck className="w-4 h-4 text-success-600" />
                 <span>Our Culinary Standard</span>
               </div>
 
@@ -560,9 +724,21 @@ export default function HomePage() {
                     <MapPin className="w-5 h-5" />
                   </div>
                   <div>
-                    <h5 className="text-xs font-bold text-charcoal-900">Kitchen Facility</h5>
+                    <h5 className="text-xs font-bold text-charcoal-900">Veg Kitchen</h5>
                     <p className="text-xs text-charcoal-600 mt-0.5">
-                      Culinary Hub, Blocks 4 & 5, Sector 18, Metro City – 560001
+                      Sai Baba Dhaba and Family Restaurant, Bhanpur, Bhopal, Madhya Pradesh 462038
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-3.5">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-cream-200 text-charcoal-700 flex-shrink-0">
+                    <MapPin className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h5 className="text-xs font-bold text-charcoal-900">Non-Veg Kitchen</h5>
+                    <p className="text-xs text-charcoal-600 mt-0.5">
+                      New Bhopal Dhaba & Family Restaurant, Opp. Patel Market, Bhanpur, Bhopal, Madhya Pradesh 462038
                     </p>
                   </div>
                 </div>
@@ -574,7 +750,7 @@ export default function HomePage() {
                   <div>
                     <h5 className="text-xs font-bold text-charcoal-900">Direct Kitchen Hotline</h5>
                     <p className="text-xs text-charcoal-600 mt-0.5">
-                      +91 98765 43210 / +91 98765 43211
+                      +91-9713596109
                     </p>
                   </div>
                 </div>
@@ -586,7 +762,7 @@ export default function HomePage() {
                   <div>
                     <h5 className="text-xs font-bold text-charcoal-900">Email Inquiries</h5>
                     <p className="text-xs text-charcoal-600 mt-0.5">
-                      support@dualkitchens.example.com
+                      sahusurendra628@gmail.com
                     </p>
                   </div>
                 </div>
@@ -599,43 +775,85 @@ export default function HomePage() {
                 Send Us a Message or Party Request
               </h4>
               <p className="text-xs text-charcoal-500 mb-6">
-                Fill in your details and our team will get back to you within 15 minutes.
+                Fill in your details and your request will appear directly in the admin dashboard.
               </p>
 
               {contactSubmitted ? (
                 <Notification
                   type="success"
-                  title="Message Received!"
-                  message="Thank you! Our kitchen manager will contact you shortly regarding your request."
+                  title="Request Recorded!"
+                  message="Thank you! Your inquiry has been recorded in the admin dashboard and is ready for review."
                 />
               ) : (
-                <form onSubmit={handleContactSubmit} className="space-y-4">
+                <form
+                  onSubmit={(event) => {
+                    event.preventDefault();
+                    const formData = new FormData(event.currentTarget);
+                    const inquiry = {
+                      fullName: String(formData.get("fullName") || "").trim(),
+                      phone: String(formData.get("phone") || "").trim(),
+                      email: String(formData.get("email") || "").trim(),
+                      interestedIn: String(formData.get("interestedIn") || "Pure Veg Kitchen Order"),
+                      message: String(formData.get("message") || "").trim(),
+                      orderQuantity: Number(formData.get("orderQuantity") || 0),
+                      estimatedBudget: Number(formData.get("estimatedBudget") || 0),
+                      createdAt: new Date().toISOString(),
+                    };
+
+                    if (!inquiry.fullName || !inquiry.phone || !inquiry.email || !inquiry.message) {
+                      return;
+                    }
+
+                    try {
+                      const previous = JSON.parse(
+                        window.localStorage.getItem("dual-kitchens-bulk-orders") || "[]"
+                      );
+                      const next = Array.isArray(previous) ? previous : [];
+                      next.unshift(inquiry);
+                      window.localStorage.setItem("dual-kitchens-bulk-orders", JSON.stringify(next));
+                    } catch {
+                      // Ignore storage failures silently in unsupported browsers.
+                    }
+
+                    event.currentTarget.reset();
+                    setContactSubmitted(true);
+                    setTimeout(() => setContactSubmitted(false), 5000);
+                  }}
+                  className="space-y-4"
+                >
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <Input
+                      name="fullName"
                       label="Your Full Name"
-                      placeholder="e.g. Rahul Sharma"
+                      placeholder="Your Full Name"
                       required
                     />
                     <Input
+                      name="phone"
                       label="Phone Number"
                       type="tel"
-                      placeholder="e.g. +91 98765 43210"
+                      placeholder="Phone Number"
                       required
                     />
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <Input
+                      name="email"
                       label="Email Address"
                       type="email"
-                      placeholder="e.g. rahul@example.com"
+                      placeholder="Email Address"
                       required
                     />
                     <div>
                       <label className="block text-xs font-semibold uppercase tracking-wider text-charcoal-700 mb-1.5">
                         Interested In
                       </label>
-                      <select className="w-full rounded-xl border border-cream-300 bg-white px-3 py-2.5 text-xs text-charcoal-900 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20">
+                      <select
+                        name="interestedIn"
+                        defaultValue="Pure Veg Kitchen Order"
+                        className="w-full rounded-xl border border-cream-300 bg-white px-3 py-2.5 text-xs text-charcoal-900 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20"
+                      >
                         <option>Pure Veg Kitchen Order</option>
                         <option>Non-Veg Kitchen Order</option>
                         <option>Combined / Catering Bulk Order</option>
@@ -644,11 +862,39 @@ export default function HomePage() {
                     </div>
                   </div>
 
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-semibold uppercase tracking-wider text-charcoal-700 mb-1.5">
+                        Approx. Order Quantity
+                      </label>
+                      <input
+                        name="orderQuantity"
+                        type="number"
+                        min="1"
+                        placeholder="e.g. 25"
+                        className="w-full rounded-xl border border-cream-300 bg-white px-4 py-2.5 text-xs text-charcoal-900 placeholder:text-charcoal-500/60 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold uppercase tracking-wider text-charcoal-700 mb-1.5">
+                        Estimated Budget (₹)
+                      </label>
+                      <input
+                        name="estimatedBudget"
+                        type="number"
+                        min="0"
+                        placeholder="e.g. 2500"
+                        className="w-full rounded-xl border border-cream-300 bg-white px-4 py-2.5 text-xs text-charcoal-900 placeholder:text-charcoal-500/60 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20"
+                      />
+                    </div>
+                  </div>
+
                   <div>
                     <label className="block text-xs font-semibold uppercase tracking-wider text-charcoal-700 mb-1.5">
                       Your Message or Requirements
                     </label>
                     <textarea
+                      name="message"
                       rows={3}
                       placeholder="Mention any delivery address, dietary requirements, or headcount..."
                       className="w-full rounded-xl border border-cream-300 bg-white px-4 py-2.5 text-xs text-charcoal-900 placeholder:text-charcoal-500/60 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20"

@@ -10,6 +10,11 @@ export const OrderItemInputSchema = z.object({
   specialInstructions: z.string().trim().max(200).optional(),
 });
 
+const CoordinatesSchema = z.object({
+  latitude: z.number().min(-90).max(90),
+  longitude: z.number().min(-180).max(180),
+});
+
 export const CreateOrderSchema = z.object({
   restaurantId: ObjectIdSchema,
   restaurantSlug: z.enum(["veg", "non-veg"]),
@@ -22,7 +27,9 @@ export const CreateOrderSchema = z.object({
     .refine((val) => /^(\+91)?[6-9]\d{9}$/.test(val), "Valid 10-digit mobile number required")
     .transform((val) => (val.startsWith("+91") ? val.slice(3) : val)),
   customerEmail: z.string().trim().email().optional().or(z.literal("")),
-  deliveryAddress: CustomerAddressSchema.omit({ isDefault: true }).optional(),
+  deliveryAddress: CustomerAddressSchema.omit({ isDefault: true })
+    .extend({ coordinates: CoordinatesSchema.optional() })
+    .optional(),
   deliveryNotes: z.string().trim().max(300).optional(),
   couponCode: z.string().trim().max(20).toUpperCase().optional(),
   paymentMethod: z.enum(["razorpay", "cod"]).default("cod"),
@@ -32,4 +39,3 @@ export const CreateOrderSchema = z.object({
 
 export type OrderItemInput = z.infer<typeof OrderItemInputSchema>;
 export type CreateOrderInput = z.infer<typeof CreateOrderSchema>;
-

@@ -3,6 +3,9 @@ import mongoose, { Document, Model, Schema } from "mongoose";
 export interface IDeliveryPersonnel extends Document {
   name: string;
   phone: string;
+  passwordHash: string;
+  failedLoginAttempts: number;
+  lockedUntil?: Date;
   vehicleNumber: string;
   status: "available" | "on_delivery" | "off_duty";
   currentActiveOrderId?: mongoose.Types.ObjectId;
@@ -16,6 +19,9 @@ const DeliveryPersonnelSchema = new Schema<IDeliveryPersonnel>(
   {
     name: { type: String, required: true, trim: true },
     phone: { type: String, required: true, unique: true, trim: true, index: true },
+    passwordHash: { type: String, required: true, select: false },
+    failedLoginAttempts: { type: Number, default: 0 },
+    lockedUntil: { type: Date },
     vehicleNumber: { type: String, required: true, trim: true },
     status: {
       type: String,
@@ -41,4 +47,3 @@ const DeliveryPersonnelSchema = new Schema<IDeliveryPersonnel>(
 export const DeliveryPersonnel: Model<IDeliveryPersonnel> =
   mongoose.models.DeliveryPersonnel ||
   mongoose.model<IDeliveryPersonnel>("DeliveryPersonnel", DeliveryPersonnelSchema);
-

@@ -2,6 +2,8 @@ import mongoose, { Document, Model, Schema } from "mongoose";
 
 export interface ICoupon extends Document {
   code: string;
+  campaignType: "offer" | "coupon";
+  title: string;
   description?: string;
   restaurantId?: mongoose.Types.ObjectId; // null means valid on both
   discountType: "percentage" | "flat";
@@ -27,6 +29,8 @@ const CouponSchema = new Schema<ICoupon>(
       trim: true,
       index: true,
     },
+    campaignType: { type: String, enum: ["offer", "coupon"], default: "coupon", index: true },
+    title: { type: String, required: true, trim: true, maxlength: 100 },
     description: { type: String, trim: true },
     restaurantId: {
       type: Schema.Types.ObjectId,
@@ -60,4 +64,3 @@ const CouponSchema = new Schema<ICoupon>(
 
 export const Coupon: Model<ICoupon> =
   mongoose.models.Coupon || mongoose.model<ICoupon>("Coupon", CouponSchema);
-

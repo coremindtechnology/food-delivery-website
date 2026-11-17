@@ -21,6 +21,10 @@ export interface IOrder extends Document {
     city: string;
     pincode: string;
     landmark?: string;
+    coordinates: {
+      latitude: number;
+      longitude: number;
+    };
   };
   items: IOrderItem[];
   subtotal: number;
@@ -60,6 +64,10 @@ const OrderSchema = new Schema<IOrder>(
       city: { type: String, required: true },
       pincode: { type: String, required: true },
       landmark: { type: String },
+      coordinates: {
+        latitude: { type: Number, required: true, min: -90, max: 90 },
+        longitude: { type: Number, required: true, min: -180, max: 180 },
+      },
     },
     items: [
       {
@@ -105,4 +113,3 @@ const OrderSchema = new Schema<IOrder>(
 
 export const OrderModel =
   mongoose.models.Order || mongoose.model<IOrder>("Order", OrderSchema);
-

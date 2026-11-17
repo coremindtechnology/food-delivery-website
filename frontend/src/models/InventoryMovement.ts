@@ -3,7 +3,7 @@ import mongoose, { Document, Model, Schema } from "mongoose";
 export interface IInventoryMovement extends Document {
   restaurantId: mongoose.Types.ObjectId;
   menuItemId: mongoose.Types.ObjectId;
-  movementType: "restock" | "order_deduction" | "wastage" | "adjustment";
+  movementType: "restock" | "order_deduction" | "order_release" | "wastage" | "adjustment";
   quantity: number;
   previousCount: number;
   newCount: number;
@@ -30,7 +30,7 @@ const InventoryMovementSchema = new Schema<IInventoryMovement>(
     },
     movementType: {
       type: String,
-      enum: ["restock", "order_deduction", "wastage", "adjustment"],
+      enum: ["restock", "order_deduction", "order_release", "wastage", "adjustment"],
       required: true,
       index: true,
     },
@@ -57,4 +57,3 @@ InventoryMovementSchema.index({ restaurantId: 1, createdAt: -1 });
 export const InventoryMovement: Model<IInventoryMovement> =
   mongoose.models.InventoryMovement ||
   mongoose.model<IInventoryMovement>("InventoryMovement", InventoryMovementSchema);
-

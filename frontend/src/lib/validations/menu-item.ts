@@ -25,7 +25,18 @@ export const CreateMenuItemSchema = z.object({
   description: z.string().min(5).max(600),
   price: z.number().min(0, "Price must be positive"),
   originalPrice: z.number().min(0).optional(),
-  image: z.string().url("Valid image URL required"),
+  image: z
+    .string()
+    .min(1, "An image is required")
+    .max(2048, "Image URL is too long")
+    .refine((value) => {
+      if (/^\/api\/menu-images\/[0-9a-fA-F]{24}$/.test(value)) return true;
+      try {
+        return ["http:", "https:"].includes(new URL(value).protocol);
+      } catch {
+        return false;
+      }
+    }, "Provide a valid image URL or upload an image"),
   isVeg: z.boolean(),
   isPopular: z.boolean().default(false),
   isChefSpecial: z.boolean().default(false),
@@ -41,12 +52,14 @@ export const CreateMenuItemSchema = z.object({
   available: z.boolean().default(true),
   inStock: z.boolean().default(true),
   inventoryCount: z.number().int().min(0).default(100),
+  lowStockThreshold: z.number().int().min(0).default(10),
+  sortOrder: z.number().int().default(0),
 });
 
 export const UpdateMenuItemSchema = CreateMenuItemSchema.omit({
-  restaurantId: true,
+  inventoryCount: true,
+  inStock: true,
 }).partial();
 
 export type CreateMenuItemInput = z.infer<typeof CreateMenuItemSchema>;
 export type UpdateMenuItemInput = z.infer<typeof UpdateMenuItemSchema>;
-

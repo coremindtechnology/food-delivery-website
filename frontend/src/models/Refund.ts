@@ -6,9 +6,12 @@ export interface IRefund extends Document {
   restaurantId: mongoose.Types.ObjectId;
   amount: number;
   reason: string;
-  status: "pending" | "processed" | "failed";
+  status: "pending" | "processing" | "processed" | "failed";
   razorpayRefundId?: string;
   processedByAdminId?: mongoose.Types.ObjectId;
+  idempotencyKey: string;
+  processedAt?: Date;
+  failureReason?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -37,12 +40,15 @@ const RefundSchema = new Schema<IRefund>(
     reason: { type: String, required: true, trim: true },
     status: {
       type: String,
-      enum: ["pending", "processed", "failed"],
+      enum: ["pending", "processing", "processed", "failed"],
       default: "pending",
       index: true,
     },
     razorpayRefundId: { type: String, index: true },
     processedByAdminId: { type: Schema.Types.ObjectId, ref: "AdminUser" },
+    idempotencyKey: { type: String, required: true, unique: true, index: true },
+    processedAt: { type: Date },
+    failureReason: { type: String },
   },
   {
     timestamps: true,
@@ -55,6 +61,9 @@ const RefundSchema = new Schema<IRefund>(
   }
 );
 
+RefundSchema.index({ orderId: 1, status: 1 });
+RefundSchema.index({ restaurantId: 1, processedAt: 1 });
+RefundSchema.index({ restaurantId: 1, createdAt: 1 });
+
 export const Refund: Model<IRefund> =
   mongoose.models.Refund || mongoose.model<IRefund>("Refund", RefundSchema);
-

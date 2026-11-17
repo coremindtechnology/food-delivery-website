@@ -2,7 +2,21 @@
 
 import React, { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
-import { X, Phone, KeyRound, ArrowRight, ShieldCheck, RefreshCw } from "lucide-react";
+import Link from "next/link";
+import {
+  ArrowRight,
+  CookingPot,
+  Heart,
+  KeyRound,
+  Leaf,
+  LockKeyhole,
+  Phone,
+  RefreshCw,
+  Truck,
+  Wallet,
+  Wrench,
+  X,
+} from "lucide-react";
 import { Button } from "@/components/ui/Button";
 
 export function AuthModal() {
@@ -108,32 +122,74 @@ export function AuthModal() {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-charcoal-900/60 backdrop-blur-sm animate-fade-in">
-      <div className="relative w-full max-w-md bg-white rounded-3xl shadow-2xl border border-cream-200 overflow-hidden">
-        {/* Header Ribbon */}
-        <div className="relative bg-gradient-to-r from-primary-600 to-amber-500 px-6 py-8 text-white">
+    <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-[#111614]/75 p-4 backdrop-blur-md animate-fade-in">
+      <div className="relative my-auto w-full max-w-[680px] overflow-hidden rounded-[28px] border border-white/80 bg-gradient-to-br from-[#fffefa] via-[#fdfaf4] to-[#f3f8e9] shadow-[0_28px_90px_rgba(0,0,0,0.35)]">
+        <div className="pointer-events-none absolute -right-7 top-16 rotate-[-28deg] text-[#7ab943]/80">
+          <Leaf className="h-12 w-12 fill-current" />
+        </div>
+        <div className="pointer-events-none absolute -right-1 top-28 rotate-[35deg] text-[#9bc963]/70">
+          <Leaf className="h-7 w-7 fill-current" />
+        </div>
+        <div className="pointer-events-none absolute -left-2 bottom-8 rotate-[-25deg] text-[#85bd4d]/80">
+          <Leaf className="h-10 w-10 fill-current" />
+        </div>
+        <div className="pointer-events-none absolute -right-2 bottom-4 rotate-[25deg] text-[#85bd4d]/80">
+          <Leaf className="h-10 w-10 fill-current" />
+        </div>
+
+        <div className="relative px-5 pb-5 pt-5 sm:px-11 sm:pb-8 sm:pt-9">
           <button
             type="button"
             onClick={closeAuthModal}
-            className="absolute top-4 right-4 p-2 text-white/80 hover:text-white rounded-full hover:bg-white/10 transition-colors"
+            aria-label="Close login"
+            className="absolute right-5 top-5 flex h-10 w-10 items-center justify-center rounded-full bg-white text-charcoal-700 shadow-sm transition hover:bg-cream-100 sm:right-7 sm:top-7"
           >
-            <X className="w-5 h-5" />
+            <X className="h-5 w-5" />
           </button>
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/20 text-xs font-semibold uppercase tracking-wider mb-2">
-            <ShieldCheck className="w-3.5 h-3.5" /> Secure Authentication
+
+          <div className="mb-7 flex items-center gap-2.5 pr-12">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#ff7900] text-lg font-black tracking-tight text-white shadow-sm">
+              DK
+            </div>
+            <div>
+              <p className="font-display text-base font-extrabold leading-tight text-[#171717]">Dual Kitchens</p>
+              <p className="mt-0.5 text-[9px] font-semibold uppercase tracking-[0.08em] text-charcoal-600">Veg &amp; Non-Veg Cloud Kitchens</p>
+            </div>
           </div>
-          <h2 className="text-2xl font-black font-display tracking-tight">
-            {step === "phone" ? "Welcome to Dual Kitchens" : "Verify Mobile Number"}
-          </h2>
-          <p className="text-white/85 text-xs mt-1">
+
+          <div className="relative">
+            <CookingPot aria-hidden="true" className="absolute right-7 top-0 hidden h-11 w-11 text-[#16853e] sm:block" strokeWidth={1.8} />
+            <h2 className="pr-10 font-display text-[1.65rem] font-black leading-tight tracking-tight text-[#171717] sm:text-[1.8rem]">
+              {step === "phone" ? (
+                <>Welcome to <span className="text-[#16853e]">Dual Kitchens</span></>
+              ) : (
+                <>Verify <span className="text-[#16853e]">Mobile Number</span></>
+              )}
+            </h2>
+          </div>
+          <p className="mt-2 text-sm leading-relaxed text-charcoal-700">
             {step === "phone"
               ? "Login or create an account with SMS OTP to track orders & save addresses"
               : `Enter the 6-digit code sent to +91 ${phone}`}
           </p>
-        </div>
 
-        {/* Form Body */}
-        <div className="p-6">
+          {step === "phone" && (
+            <div className="my-5 grid grid-cols-3 gap-2 sm:gap-3">
+              <div className="flex min-h-10 items-center justify-center gap-1.5 rounded-full bg-white/85 px-2 text-[10px] font-semibold text-charcoal-800 shadow-[0_3px_12px_rgba(40,50,30,0.06)] sm:gap-2 sm:px-3 sm:text-xs">
+                <Truck className="h-4 w-4 text-[#16853e]" />
+                <span>Track Orders</span>
+              </div>
+              <div className="flex min-h-10 items-center justify-center gap-1.5 rounded-full bg-white/85 px-2 text-[10px] font-semibold text-charcoal-800 shadow-[0_3px_12px_rgba(40,50,30,0.06)] sm:gap-2 sm:px-3 sm:text-xs">
+                <Wallet className="h-4 w-4 text-[#16853e]" />
+                <span>Get Best Offers</span>
+              </div>
+              <div className="flex min-h-10 items-center justify-center gap-1.5 rounded-full bg-white/85 px-2 text-[10px] font-semibold text-charcoal-800 shadow-[0_3px_12px_rgba(40,50,30,0.06)] sm:gap-2 sm:px-3 sm:text-xs">
+                <Heart className="h-4 w-4 text-[#16853e]" />
+                <span>Save Addresses</span>
+              </div>
+            </div>
+          )}
+
           {error && (
             <div className="mb-4 p-3.5 rounded-2xl bg-red-50 border border-red-200 text-xs text-red-700 font-medium">
               {error}
@@ -142,14 +198,16 @@ export function AuthModal() {
 
           {/* Dev Mock OTP Notification */}
           {devOtpHint && (
-            <div className="mb-4 p-3 rounded-2xl bg-amber-50 border border-amber-300 text-xs text-amber-900 font-medium flex items-center justify-between">
-              <span>
-                🛠️ <strong>Dev Mock OTP:</strong> <code className="bg-amber-100 px-1.5 py-0.5 rounded font-mono font-bold text-amber-800">{devOtpHint}</code>
+            <div className="mb-5 flex items-center justify-between gap-3 rounded-2xl border border-amber-300 bg-amber-50 px-4 py-3 text-xs font-medium text-amber-900">
+              <span className="flex items-center gap-2">
+                <Wrench className="h-4 w-4 shrink-0 text-amber-700" />
+                <strong>Dev Mock OTP:</strong>
+                <code className="rounded bg-amber-100 px-2 py-1 font-mono font-bold tracking-wider text-amber-800">{devOtpHint}</code>
               </span>
               <button
                 type="button"
                 onClick={() => setOtp(devOtpHint)}
-                className="text-[11px] underline text-primary-600 font-bold"
+                className="shrink-0 text-[11px] font-bold text-primary-600 underline"
               >
                 Auto-fill
               </button>
@@ -159,13 +217,13 @@ export function AuthModal() {
           {step === "phone" ? (
             <form onSubmit={handleSendOtp} className="space-y-4">
               <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-charcoal-700 mb-1.5">
+                <label className="mb-2 flex items-center gap-2 text-sm font-bold text-[#20251f]">
+                  <Phone className="h-4 w-4 text-[#145c35]" />
                   Mobile Number
                 </label>
-                <div className="relative flex items-center">
-                  <div className="absolute left-3.5 flex items-center gap-1.5 pointer-events-none text-charcoal-500 font-bold text-sm">
-                    <span>🇮🇳</span>
-                    <span>+91</span>
+                <div className="flex overflow-hidden rounded-2xl border border-[#b8d9b2] bg-white shadow-[0_2px_8px_rgba(38,100,44,0.05)] transition focus-within:ring-2 focus-within:ring-[#238545]/25">
+                  <div className="flex items-center border-r border-[#d6e5d1] bg-[#edf5e9] px-4 text-sm font-bold text-charcoal-800">
+                    IN +91
                   </div>
                   <input
                     type="tel"
@@ -175,10 +233,10 @@ export function AuthModal() {
                     placeholder="98765 43210"
                     autoFocus
                     required
-                    className="w-full pl-20 pr-4 py-3.5 rounded-2xl border border-cream-300 focus:outline-none focus:ring-2 focus:ring-primary-500 text-charcoal-900 font-semibold tracking-wide text-base placeholder:text-charcoal-400 placeholder:font-normal"
+                    className="min-w-0 flex-1 bg-transparent px-4 py-3.5 text-base font-semibold tracking-wide text-charcoal-900 outline-none placeholder:font-normal placeholder:text-charcoal-400"
                   />
                 </div>
-                <p className="text-[11px] text-charcoal-500 mt-1.5">
+                <p className="mt-2 text-xs text-charcoal-500">
                   We will send a 6-digit one-time password via SMS.
                 </p>
               </div>
@@ -189,7 +247,7 @@ export function AuthModal() {
                 size="lg"
                 fullWidth
                 isLoading={isLoading}
-                className="mt-2 font-bold"
+                className="mt-1 h-12 rounded-full bg-gradient-to-r from-[#078d42] to-[#087332] font-bold shadow-[0_7px_16px_rgba(0,115,49,0.2)] hover:from-[#087a3b] hover:to-[#075d2a] focus-visible:ring-[#078d42]"
               >
                 <span>Send OTP</span>
                 <ArrowRight className="w-4 h-4 ml-1.5" />
@@ -197,8 +255,9 @@ export function AuthModal() {
             </form>
           ) : (
             <form onSubmit={handleVerifyOtp} className="space-y-4">
-              <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-charcoal-700 mb-1.5">
+              <div className="space-y-3">
+                <div>
+                <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-charcoal-700">
                   Your Full Name (Optional)
                 </label>
                 <input
@@ -206,10 +265,11 @@ export function AuthModal() {
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="e.g. Rahul Sharma"
-                  className="w-full px-4 py-2.5 rounded-2xl border border-cream-300 focus:outline-none focus:ring-2 focus:ring-primary-500 text-charcoal-900 text-sm mb-3 placeholder:text-charcoal-400"
+                  className="w-full rounded-2xl border border-cream-300 bg-white px-4 py-3 text-sm text-charcoal-900 placeholder:text-charcoal-400 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20"
                 />
-
-                <label className="block text-xs font-bold uppercase tracking-wider text-charcoal-700 mb-1.5">
+                </div>
+                <div>
+                <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-charcoal-700">
                   Enter 6-Digit OTP
                 </label>
                 <div className="relative">
@@ -222,13 +282,14 @@ export function AuthModal() {
                     placeholder="••••••"
                     autoFocus
                     required
-                    className="w-full text-center tracking-[0.5em] font-mono text-2xl font-bold py-3 px-4 rounded-2xl border border-cream-300 focus:outline-none focus:ring-2 focus:ring-primary-500 text-charcoal-900"
+                    className="h-[76px] w-full rounded-[22px] border-2 border-primary-500 bg-white py-3 pl-14 pr-4 text-center font-mono text-2xl font-bold tracking-[0.45em] text-charcoal-900 focus:outline-none focus:ring-4 focus:ring-primary-500/15"
                   />
-                  <KeyRound className="absolute left-4 top-3.5 w-5 h-5 text-charcoal-400" />
+                  <KeyRound className="absolute left-5 top-1/2 h-5 w-5 -translate-y-1/2 text-charcoal-700" />
+                </div>
                 </div>
               </div>
 
-              <div className="flex items-center justify-between text-xs pt-1">
+              <div className="flex items-center justify-between pt-1 text-xs">
                 <button
                   type="button"
                   onClick={() => setStep("phone")}
@@ -259,7 +320,7 @@ export function AuthModal() {
                 size="lg"
                 fullWidth
                 isLoading={isLoading}
-                className="mt-2 font-bold"
+                className="mt-1 h-12 rounded-full bg-primary-500 font-extrabold shadow-sm hover:bg-primary-600"
               >
                 <span>Verify & Continue</span>
                 <ArrowRight className="w-4 h-4 ml-1.5" />
@@ -267,9 +328,13 @@ export function AuthModal() {
             </form>
           )}
 
-          <div className="mt-6 pt-4 border-t border-cream-200 text-center">
-            <p className="text-[11px] text-charcoal-500">
-              By proceeding, you agree to our Terms of Service & Privacy Policy.
+          <div className="relative mt-5 flex items-center justify-center gap-1.5 text-center text-[10px] leading-relaxed text-charcoal-600 sm:text-[11px]">
+            <LockKeyhole className="h-3.5 w-3.5 flex-shrink-0 text-charcoal-500" />
+            <p>
+              By proceeding, you agree to our{" "}
+              <Link href="/terms-of-service" className="font-semibold text-[#16853e] hover:underline">Terms of Service</Link>
+              {" & "}
+              <Link href="/privacy-policy" className="font-semibold text-[#16853e] hover:underline">Privacy Policy</Link>.
             </p>
           </div>
         </div>
@@ -277,4 +342,3 @@ export function AuthModal() {
     </div>
   );
 }
-

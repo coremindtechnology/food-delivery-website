@@ -3,13 +3,20 @@
 @tailwind utilities;
 
 :root {
-  --foreground-rgb: 28, 25, 23;
-  --background-rgb: 255, 253, 248;
+  --foreground-rgb: 40, 44, 63;
+  --background-rgb: 250, 247, 240;
+  --warm-ivory: #faf7f0;
+  --sage-soft: #f1f5e9;
+  --white: #ffffff;
+}
+
+html {
+  background: var(--warm-ivory);
 }
 
 body {
   color: rgb(var(--foreground-rgb));
-  background-color: rgb(var(--background-rgb));
+  background: linear-gradient(180deg, var(--warm-ivory) 0%, var(--sage-soft) 100%);
   font-feature-settings: "cv02", "cv03", "cv04", "cv11";
   -webkit-font-smoothing: antialiased;
 }
@@ -21,20 +28,38 @@ body {
 }
 
 ::-webkit-scrollbar-track {
-  background: #fdfbf7;
+  background: #f7f7f7;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #e3d5c0;
+  background: #e9e9eb;
   border-radius: 9999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #cbb69b;
+  background: #d3d3d7;
 }
 
 /* Smooth transitions */
 * {
-  border-color: #f1e9da;
+  border-color: #e9e9eb;
 }
 
+/* Floating leaf animation */
+@keyframes leafFloat {
+  0% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-7px) rotate(3deg);
+  }
+  100% {
+    transform: translateY(-14px) rotate(-2deg);
+  }
+}
+
+/* Script cursive typography for 'Discover Our' matching reference design */
+.font-script {
+  font-family: "Brush Script MT", "Segoe Script", "Dancing Script", "Caveat", "Snell Roundhand", cursive;
+  letter-spacing: 0.02em;
+}

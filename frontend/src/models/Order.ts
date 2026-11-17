@@ -25,6 +25,7 @@ export interface IOrder extends Document {
   orderNumber: string;
   restaurantId: mongoose.Types.ObjectId;
   restaurantSlug: "veg" | "non-veg";
+  fulfillmentType: "delivery" | "takeaway";
   customerId?: mongoose.Types.ObjectId;
   customerName: string;
   customerPhone: string;
@@ -35,6 +36,10 @@ export interface IOrder extends Document {
     state: string;
     pincode: string;
     landmark?: string;
+    coordinates?: {
+      latitude: number;
+      longitude: number;
+    };
   };
   items: IOrderItemSnapshot[];
   subtotal: number;
@@ -44,19 +49,40 @@ export interface IOrder extends Document {
   couponCode?: string;
   totalAmount: number;
   paymentMethod: "razorpay" | "cod";
-  paymentStatus: "pending" | "paid" | "failed" | "refunded";
+  paymentStatus: "pending" | "authorized" | "paid" | "partially_paid" | "failed" | "partially_refunded" | "refunded";
+  refundStatus: "none" | "pending" | "processing" | "processed" | "failed";
   orderStatus:
-    | "placed"
-    | "confirmed"
+    | "pending_payment"
+    | "new"
+    | "accepted"
     | "preparing"
+    | "ready"
+    | "dispatched"
     | "ready_for_pickup"
-    | "out_for_delivery"
     | "delivered"
+    | "rejected"
     | "cancelled";
+  cashCollectedAmount: number;
+  cashOutstandingAmount: number;
+  currentDeliveryPersonnelId?: mongoose.Types.ObjectId;
+  statusHistory: {
+    status: string;
+    changedAt: Date;
+    changedBy?: mongoose.Types.ObjectId;
+    reason?: string;
+  }[];
+  razorpayOrderId?: string;
+  paymentAttemptCount: number;
+  pendingPaymentExpiresAt?: Date;
   cancelledReason?: string;
   deliveryNotes?: string;
   placedAt: Date;
   deliveredAt?: Date;
+  deliveryConfirmationCodeHash?: string;
+  deliveryConfirmationExpiresAt?: Date;
+  deliveryConfirmationAttempts: number;
+  deliveryConfirmationLastSentAt?: Date;
+  deliveryConfirmationVerifiedAt?: Date;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -105,6 +131,12 @@ const OrderSchema = new Schema<IOrder>(
       enum: ["veg", "non-veg"],
       index: true,
     },
+    fulfillmentType: {
+      type: String,
+      enum: ["delivery", "takeaway"],
+      default: "delivery",
+      required: true,
+    },
     customerId: { type: Schema.Types.ObjectId, ref: "Customer", index: true },
     customerName: { type: String, required: true, trim: true },
     customerPhone: { type: String, required: true, trim: true, index: true },
@@ -115,6 +147,10 @@ const OrderSchema = new Schema<IOrder>(
       state: { type: String, default: "State" },
       pincode: { type: String, required: true },
       landmark: { type: String },
+      coordinates: {
+        latitude: { type: Number, min: -90, max: 90 },
+        longitude: { type: Number, min: -180, max: 180 },
+      },
     },
     items: [OrderItemSnapshotSchema],
     subtotal: { type: Number, required: true, min: 0 },
@@ -131,28 +167,60 @@ const OrderSchema = new Schema<IOrder>(
     },
     paymentStatus: {
       type: String,
-      enum: ["pending", "paid", "failed", "refunded"],
+      enum: ["pending", "authorized", "paid", "partially_paid", "failed", "partially_refunded", "refunded"],
       default: "pending",
+      index: true,
+    },
+    refundStatus: {
+      type: String,
+      enum: ["none", "pending", "processing", "processed", "failed"],
+      default: "none",
       index: true,
     },
     orderStatus: {
       type: String,
       enum: [
-        "placed",
-        "confirmed",
+        "pending_payment",
+        "new",
+        "accepted",
         "preparing",
+        "ready",
+        "dispatched",
         "ready_for_pickup",
-        "out_for_delivery",
         "delivered",
+        "rejected",
         "cancelled",
       ],
-      default: "placed",
+      default: "new",
       index: true,
     },
+    cashCollectedAmount: { type: Number, default: 0, min: 0 },
+    cashOutstandingAmount: { type: Number, default: 0, min: 0 },
+    currentDeliveryPersonnelId: {
+      type: Schema.Types.ObjectId,
+      ref: "DeliveryPersonnel",
+      index: true,
+    },
+    statusHistory: [
+      {
+        status: { type: String, required: true },
+        changedAt: { type: Date, default: Date.now },
+        changedBy: { type: Schema.Types.ObjectId, ref: "AdminUser" },
+        reason: { type: String, trim: true },
+      },
+    ],
+    razorpayOrderId: { type: String, index: true },
+    paymentAttemptCount: { type: Number, default: 0, min: 0 },
+    pendingPaymentExpiresAt: { type: Date, index: true },
     cancelledReason: { type: String },
     deliveryNotes: { type: String },
     placedAt: { type: Date, default: Date.now, index: true },
     deliveredAt: { type: Date },
+    deliveryConfirmationCodeHash: { type: String, select: false },
+    deliveryConfirmationExpiresAt: { type: Date },
+    deliveryConfirmationAttempts: { type: Number, default: 0, min: 0 },
+    deliveryConfirmationLastSentAt: { type: Date },
+    deliveryConfirmationVerifiedAt: { type: Date },
   },
   {
     timestamps: true,
@@ -166,8 +234,9 @@ const OrderSchema = new Schema<IOrder>(
 );
 
 OrderSchema.index({ restaurantId: 1, orderStatus: 1, placedAt: -1 });
+OrderSchema.index({ restaurantId: 1, orderStatus: 1, deliveredAt: 1 });
 OrderSchema.index({ customerPhone: 1, placedAt: -1 });
+OrderSchema.index({ currentDeliveryPersonnelId: 1, orderStatus: 1 });
 
 export const Order: Model<IOrder> =
   mongoose.models.Order || mongoose.model<IOrder>("Order", OrderSchema);
-

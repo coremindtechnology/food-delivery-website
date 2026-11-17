@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { connectToDatabase } from "@/lib/mongodb";
 import { AdminUser, IAdminUser, AdminRole } from "@/models/AdminUser";
 import { Session } from "@/models/Session";
+import { getServerSecret } from "@/lib/server-secrets";
 
 export const ADMIN_SESSION_COOKIE = "admin_session";
 export const ADMIN_SESSION_DAYS = 7;
@@ -11,7 +12,7 @@ export const MAX_LOGIN_ATTEMPTS = 3;
 export const LOCKOUT_MINUTES = 15;
 
 function hashToken(token: string): string {
-  const secret = process.env.ADMIN_JWT_SECRET || process.env.JWT_SECRET || "admin_salt_key_2026";
+  const secret = getServerSecret("ADMIN_JWT_SECRET", "admin_salt_key_2026");
   return crypto.createHmac("sha256", secret).update(token).digest("hex");
 }
 
@@ -119,7 +120,14 @@ export async function verifyAdminPermissions(
   }
 
   // 3. Restaurant ownership check
-  if (targetRestaurantId && admin.assignedRestaurantId) {
+  if (targetRestaurantId) {
+    if (!admin.assignedRestaurantId) {
+      return {
+        authorized: false,
+        error: "Access denied. No restaurant is assigned to this admin account.",
+        statusCode: 403,
+      };
+    }
     if (admin.assignedRestaurantId.toString() !== targetRestaurantId.toString()) {
       return {
         authorized: false,
@@ -131,4 +139,3 @@ export async function verifyAdminPermissions(
 
   return { authorized: true, admin };
 }
-

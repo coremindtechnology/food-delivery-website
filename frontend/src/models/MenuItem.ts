@@ -42,6 +42,8 @@ export interface IMenuItem extends Document {
   available: boolean;
   inStock: boolean;
   inventoryCount: number;
+  lowStockThreshold: number;
+  sortOrder: number;
   isArchived: boolean;
   createdAt: Date;
   updatedAt: Date;
@@ -100,6 +102,8 @@ const MenuItemSchema = new Schema<IMenuItem>(
     available: { type: Boolean, default: true, index: true },
     inStock: { type: Boolean, default: true, index: true },
     inventoryCount: { type: Number, default: 100, min: 0 },
+    lowStockThreshold: { type: Number, default: 10, min: 0 },
+    sortOrder: { type: Number, default: 0, index: true },
     isArchived: { type: Boolean, default: false, index: true },
   },
   {
@@ -116,8 +120,8 @@ const MenuItemSchema = new Schema<IMenuItem>(
 // Compound indexes for performant restaurant menu browsing, filtering, and sorting
 MenuItemSchema.index({ restaurantId: 1, isArchived: 1, available: 1 });
 MenuItemSchema.index({ restaurantId: 1, categorySlug: 1, price: 1 });
+MenuItemSchema.index({ restaurantId: 1, categoryId: 1, sortOrder: 1 });
 MenuItemSchema.index({ restaurantId: 1, name: "text", description: "text" });
 
 export const MenuItem: Model<IMenuItem> =
   mongoose.models.MenuItem || mongoose.model<IMenuItem>("MenuItem", MenuItemSchema);
-

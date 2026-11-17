@@ -3,7 +3,17 @@ import mongoose, { Document, Model, Schema } from "mongoose";
 export interface IExpense extends Document {
   restaurantId: mongoose.Types.ObjectId;
   title: string;
-  category: "raw_materials" | "packaging" | "utilities" | "staff" | "maintenance" | "other";
+  category:
+    | "food_cost"
+    | "raw_materials"
+    | "packaging"
+    | "delivery"
+    | "staff"
+    | "rent"
+    | "utilities"
+    | "gateway_fees"
+    | "maintenance"
+    | "other";
   amount: number;
   expenseDate: Date;
   notes?: string;
@@ -24,7 +34,18 @@ const ExpenseSchema = new Schema<IExpense>(
     title: { type: String, required: true, trim: true },
     category: {
       type: String,
-      enum: ["raw_materials", "packaging", "utilities", "staff", "maintenance", "other"],
+      enum: [
+        "food_cost",
+        "raw_materials",
+        "packaging",
+        "delivery",
+        "staff",
+        "rent",
+        "utilities",
+        "gateway_fees",
+        "maintenance",
+        "other",
+      ],
       required: true,
       index: true,
     },
@@ -49,4 +70,3 @@ ExpenseSchema.index({ restaurantId: 1, expenseDate: -1 });
 
 export const Expense: Model<IExpense> =
   mongoose.models.Expense || mongoose.model<IExpense>("Expense", ExpenseSchema);
-

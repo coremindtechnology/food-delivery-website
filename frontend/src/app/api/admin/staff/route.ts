@@ -2,44 +2,36 @@ import { NextRequest } from "next/server";
 import mongoose from "mongoose";
 import { connectToDatabase } from "@/lib/mongodb";
 import { verifyAdminPermissions } from "@/lib/admin-auth";
-import { AdminUser, AdminRole } from "@/models/AdminUser";
+import { AdminUser } from "@/models/AdminUser";
+import { Restaurant } from "@/models/Restaurant";
 import { hashPassword, logAuditEvent } from "@/lib/admin-security";
 import { ObjectIdSchema } from "@/lib/validations/common";
 import { successResponse, errorResponse, handleApiError } from "@/lib/api-response";
 import { z } from "zod";
+
+const SubAdminRoleSchema = z.enum([
+  "restaurant_manager",
+  "order_manager",
+  "menu_manager",
+  "delivery_manager",
+  "delivery_personnel",
+  "finance_viewer",
+  "veg_manager",
+  "nonveg_manager",
+]);
 
 const CreateStaffSchema = z.object({
   name: z.string().trim().min(2).max(60),
   email: z.string().trim().email(),
   phone: z.string().trim().regex(/^\d{10}$/, "Valid 10-digit mobile required"),
   password: z.string().min(8, "Password must be at least 8 characters"),
-  role: z.enum([
-    "super_admin",
-    "restaurant_manager",
-    "order_manager",
-    "menu_manager",
-    "delivery_manager",
-    "delivery_personnel",
-    "finance_viewer",
-    "veg_manager",
-    "nonveg_manager",
-  ]),
+  role: SubAdminRoleSchema,
   assignedRestaurantId: ObjectIdSchema.optional(),
 });
 
 const UpdateStaffSchema = z.object({
   staffId: ObjectIdSchema,
-  role: z.enum([
-    "super_admin",
-    "restaurant_manager",
-    "order_manager",
-    "menu_manager",
-    "delivery_manager",
-    "delivery_personnel",
-    "finance_viewer",
-    "veg_manager",
-    "nonveg_manager",
-  ]).optional(),
+  role: SubAdminRoleSchema.optional(),
   assignedRestaurantId: ObjectIdSchema.optional().nullable(),
   isActive: z.boolean().optional(),
 });
@@ -57,6 +49,7 @@ export async function GET() {
     }
 
     const staff = await AdminUser.find()
+      .select("-passwordHash -totpSecret -totpEncryptedSecret -totpIV -totpAuthTag -totpRecoveryCodes -failedLoginAttempts -lockedUntil")
       .populate("assignedRestaurantId", "name slug")
       .sort({ createdAt: -1 })
       .lean();
@@ -81,6 +74,13 @@ export async function POST(req: NextRequest) {
 
     const body = await req.json();
     const validatedData = CreateStaffSchema.parse(body);
+    if (validatedData.assignedRestaurantId) {
+      const restaurant = await Restaurant.findOne({
+        _id: validatedData.assignedRestaurantId,
+        isArchived: false,
+      }).select("_id").lean();
+      if (!restaurant) return errorResponse("Assigned kitchen not found or archived.", 400);
+    }
 
     const existing = await AdminUser.findOne({
       $or: [{ email: validatedData.email.toLowerCase() }, { phone: validatedData.phone }],
@@ -138,8 +138,23 @@ export async function PATCH(req: NextRequest) {
     if (!staff) {
       return errorResponse("Staff user not found", 404);
     }
+    if (staff.role === "super_admin") {
+      return errorResponse("Super Admin accounts cannot be managed as sub-admins.", 400);
+    }
+    if (assignedRestaurantId) {
+      const restaurant = await Restaurant.findOne({
+        _id: assignedRestaurantId,
+        isArchived: false,
+      }).select("_id").lean();
+      if (!restaurant) return errorResponse("Assigned kitchen not found or archived.", 400);
+    }
 
-    if (role !== undefined) staff.role = role as AdminRole;
+    const previousState = {
+      role: staff.role,
+      assignedRestaurantId: staff.assignedRestaurantId?.toString(),
+      isActive: staff.isActive,
+    };
+    if (role !== undefined) staff.role = role;
     if (assignedRestaurantId !== undefined) {
       staff.assignedRestaurantId = assignedRestaurantId
         ? new mongoose.Types.ObjectId(assignedRestaurantId)
@@ -155,6 +170,7 @@ export async function PATCH(req: NextRequest) {
       action: "STAFF_USER_UPDATED",
       entity: "Admin",
       entityId: staff._id,
+      previousState,
       newState: { role, assignedRestaurantId, isActive },
       ipAddress: clientIp,
     });

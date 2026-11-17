@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { connectToDatabase } from "@/lib/mongodb";
 import { Restaurant } from "@/models/Restaurant";
 import { MenuItem } from "@/models/MenuItem";
+import { MenuCategory } from "@/models/MenuCategory";
 import { ObjectIdSchema } from "@/lib/validations/common";
 import { successResponse, errorResponse, handleApiError } from "@/lib/api-response";
 import { z } from "zod";
@@ -18,7 +19,7 @@ const MenuQuerySchema = z.object({
   search: z.string().trim().optional(),
   isPopular: z.coerce.boolean().optional(),
   isChefSpecial: z.coerce.boolean().optional(),
-  sortBy: z.enum(["price", "name", "createdAt", "isPopular"]).default("createdAt"),
+  sortBy: z.enum(["price", "name", "createdAt", "isPopular", "sortOrder"]).default("sortOrder"),
   sortOrder: z.enum(["asc", "desc"]).default("asc"),
   priceMin: z.coerce.number().min(0).optional(),
   priceMax: z.coerce.number().min(0).optional(),
@@ -76,10 +77,29 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
     const filter: Record<string, unknown> = {
       restaurantId: restaurantId,
       available: true,
+      inStock: true,
+      inventoryCount: { $gt: 0 },
       isArchived: { $ne: true },
     };
 
-    if (query.categorySlug) filter.categorySlug = query.categorySlug;
+    const categories = await MenuCategory.find({
+      restaurantId,
+      isArchived: { $ne: true },
+      isActive: true,
+    })
+      .select("_id name slug iconName image subcategories sortOrder")
+      .sort({ sortOrder: 1 })
+      .lean();
+    filter.categoryId = { $in: categories.map((category) => category._id) };
+    if (query.categorySlug) {
+      const category = await MenuCategory.findOne({
+        restaurantId,
+        slug: query.categorySlug,
+        isArchived: { $ne: true },
+        isActive: true,
+      }).select("_id");
+      filter.categoryId = category?._id || { $in: [] };
+    }
     if (query.subcategorySlug) filter.subcategorySlug = query.subcategorySlug;
     if (query.isPopular !== undefined) filter.isPopular = query.isPopular;
     if (query.isChefSpecial !== undefined) filter.isChefSpecial = query.isChefSpecial;
@@ -115,7 +135,7 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
     const totalPages = Math.ceil(totalCount / query.limit);
 
     return successResponse(
-      { restaurant, items },
+      { restaurant, items, categories },
       200,
       {
         page: query.page,

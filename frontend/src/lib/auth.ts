@@ -5,6 +5,7 @@ import { connectToDatabase } from "@/lib/mongodb";
 import { Customer, ICustomer } from "@/models/Customer";
 import { Session } from "@/models/Session";
 import { OTPChallenge } from "@/models/OTPChallenge";
+import { getServerSecret } from "@/lib/server-secrets";
 
 export const CUSTOMER_SESSION_COOKIE = "customer_session";
 export const SESSION_EXPIRY_DAYS = 30;
@@ -32,7 +33,7 @@ export function checkRateLimit(key: string, maxRequests = 5, windowMs = 60 * 100
 }
 
 export function hashString(value: string): string {
-  const secret = process.env.JWT_SECRET || "default_food_delivery_secure_salt_key_2026";
+  const secret = getServerSecret("JWT_SECRET", "default_food_delivery_secure_salt_key_2026");
   return crypto.createHmac("sha256", secret).update(value).digest("hex");
 }
 

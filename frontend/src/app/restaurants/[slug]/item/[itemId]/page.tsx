@@ -6,7 +6,6 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import {
   ArrowLeft,
-  Star,
   Clock,
   Flame,
   Info,
@@ -163,6 +162,7 @@ export default function FoodItemDetailsPage({ params }: PageProps) {
             <div className="relative h-72 sm:h-96 md:h-[420px] w-full overflow-hidden rounded-3xl bg-cream-200 shadow-card border border-cream-200">
               <Image
                 src={food.image}
+                unoptimized={food.image.startsWith("data:image/")}
                 alt={food.name}
                 fill
                 priority
@@ -185,13 +185,7 @@ export default function FoodItemDetailsPage({ params }: PageProps) {
                 )}
               </div>
 
-              {/* Rating on bottom left */}
               <div className="absolute bottom-4 left-4 flex items-center gap-2 text-white">
-                <div className="flex items-center gap-1 rounded-xl bg-charcoal-900/80 px-3 py-1 backdrop-blur-sm text-xs font-bold">
-                  <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
-                  <span>{food.rating.toFixed(1)}</span>
-                  <span className="text-white/70">({food.reviewsCount} reviews)</span>
-                </div>
                 <div className="flex items-center gap-1 rounded-xl bg-charcoal-900/80 px-3 py-1 backdrop-blur-sm text-xs font-bold">
                   <Clock className="w-3.5 h-3.5 text-white/80" />
                   <span>{food.preparationTime}</span>
@@ -482,4 +476,3 @@ export default function FoodItemDetailsPage({ params }: PageProps) {
     </div>
   );
 }
-

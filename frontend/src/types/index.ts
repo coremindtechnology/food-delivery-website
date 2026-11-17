@@ -8,12 +8,11 @@ export interface Restaurant {
   description: string;
   type: RestaurantType;
   heroImage: string;
-  rating: number;
-  reviewCount: number;
   deliveryTime: string;
   minOrder: number;
   priceRange: string;
   address: string;
+  locationUrl?: string;
   openingHours: string;
   features: string[];
   bannerText?: string;

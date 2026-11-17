@@ -5,7 +5,7 @@ import { Search, X, SlidersHorizontal, ArrowUpDown, Flame, Star, RotateCcw } fro
 import { Category } from "@/types";
 import { cn } from "@/lib/utils";
 
-export type SortOption = "popular" | "price-low" | "price-high" | "name-asc";
+export type SortOption = "menu-order" | "popular" | "price-low" | "price-high" | "name-asc";
 export type PriceFilter = "all" | "under-200" | "200-400" | "above-400";
 
 interface MenuFilterBarProps {
@@ -95,6 +95,7 @@ export function MenuFilterBar({
               onChange={(e) => onSortChange(e.target.value as SortOption)}
               className="w-full sm:w-auto appearance-none rounded-2xl border border-cream-300 bg-white pl-9 pr-8 py-3 text-xs font-semibold text-charcoal-800 shadow-sm hover:border-cream-400 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 cursor-pointer"
             >
+              <option value="menu-order">Sort: Restaurant menu order</option>
               <option value="popular">Sort: Popularity & Rating</option>
               <option value="price-low">Sort: Price Low to High</option>
               <option value="price-high">Sort: Price High to Low</option>
@@ -294,4 +295,3 @@ export function MenuFilterBar({
     </div>
   );
 }
-

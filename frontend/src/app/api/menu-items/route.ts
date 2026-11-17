@@ -7,6 +7,8 @@ import { CreateMenuItemSchema } from "@/lib/validations/menu-item";
 import { PaginationQuerySchema, ObjectIdSchema } from "@/lib/validations/common";
 import { successResponse, errorResponse, handleApiError } from "@/lib/api-response";
 import { z } from "zod";
+import { verifyAdminPermissions } from "@/lib/admin-auth";
+import { InventoryMovement } from "@/models/InventoryMovement";
 
 // Extended query schema for menu items
 const MenuItemQuerySchema = PaginationQuerySchema.extend({
@@ -19,7 +21,6 @@ const MenuItemQuerySchema = PaginationQuerySchema.extend({
   isVeg: z.coerce.boolean().optional(),
   priceMin: z.coerce.number().min(0).optional(),
   priceMax: z.coerce.number().min(0).optional(),
-  available: z.coerce.boolean().optional(),
 });
 
 // GET /api/menu-items?restaurantId=&categoryId=&categorySlug=&search=&isVeg=&priceMin=&priceMax=&isPopular=&sortBy=&page=&limit=
@@ -45,7 +46,7 @@ export async function GET(req: NextRequest) {
       page: searchParams.get("page") ?? undefined,
       limit: searchParams.get("limit") ?? undefined,
       search: searchParams.get("search") ?? undefined,
-      sortBy: searchParams.get("sortBy") ?? "createdAt",
+      sortBy: searchParams.get("sortBy") ?? "sortOrder",
       sortOrder: searchParams.get("sortOrder") ?? "desc",
       includeArchived: searchParams.get("includeArchived") ?? undefined,
       isPopular: searchParams.get("isPopular") ?? undefined,
@@ -53,25 +54,33 @@ export async function GET(req: NextRequest) {
       isVeg: searchParams.get("isVeg") ?? undefined,
       priceMin: searchParams.get("priceMin") ?? undefined,
       priceMax: searchParams.get("priceMax") ?? undefined,
-      available: searchParams.get("available") ?? undefined,
     });
 
     const filter: Record<string, unknown> = { restaurantId: parsedQuery.restaurantId };
 
-    // Only show archived items if explicitly requested
-    if (!parsedQuery.includeArchived) {
-      filter.isArchived = { $ne: true };
-    }
+    const activeCategoryIds = await MenuCategory.find({
+      restaurantId: parsedQuery.restaurantId,
+      isArchived: { $ne: true },
+      isActive: true,
+    }).distinct("_id");
+    filter.isArchived = { $ne: true };
+    filter.available = true;
+    filter.inStock = true;
+    filter.inventoryCount = { $gt: 0 };
+    filter.categoryId = { $in: activeCategoryIds };
 
-    // Public routes always exclude unavailable items unless explicitly requested
-    if (parsedQuery.available !== undefined) {
-      filter.available = parsedQuery.available;
-    } else {
-      filter.available = true;
+    if (parsedQuery.categoryId) {
+      filter.categoryId = { $in: activeCategoryIds, $eq: parsedQuery.categoryId };
     }
-
-    if (parsedQuery.categoryId) filter.categoryId = parsedQuery.categoryId;
-    if (parsedQuery.categorySlug) filter.categorySlug = parsedQuery.categorySlug;
+    if (parsedQuery.categorySlug) {
+      const category = await MenuCategory.findOne({
+        restaurantId: parsedQuery.restaurantId,
+        slug: parsedQuery.categorySlug,
+        isArchived: { $ne: true },
+        isActive: true,
+      }).select("_id");
+      filter.categoryId = category?._id || { $in: [] };
+    }
     if (parsedQuery.subcategorySlug) filter.subcategorySlug = parsedQuery.subcategorySlug;
     if (parsedQuery.isPopular !== undefined) filter.isPopular = parsedQuery.isPopular;
     if (parsedQuery.isChefSpecial !== undefined) filter.isChefSpecial = parsedQuery.isChefSpecial;
@@ -100,7 +109,7 @@ export async function GET(req: NextRequest) {
 
     const [items, totalCount] = await Promise.all([
       MenuItem.find(filter)
-        .sort({ [parsedQuery.sortBy]: sortDirection })
+        .sort({ [parsedQuery.sortBy]: sortDirection, name: 1 })
         .skip(skip)
         .limit(parsedQuery.limit)
         .lean(),
@@ -133,6 +142,14 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const validatedData = CreateMenuItemSchema.parse(body);
 
+    const authCheck = await verifyAdminPermissions(
+      ["super_admin", "restaurant_manager", "menu_manager", "veg_manager", "nonveg_manager"],
+      validatedData.restaurantId
+    );
+    if (!authCheck.authorized) {
+      return errorResponse(authCheck.error || "Unauthorized", authCheck.statusCode || 403);
+    }
+
     // Verify restaurant exists
     const restaurant = await Restaurant.findOne({
       _id: validatedData.restaurantId,
@@ -147,6 +164,7 @@ export async function POST(req: NextRequest) {
       _id: validatedData.categoryId,
       restaurantId: validatedData.restaurantId,
       isArchived: { $ne: true },
+      isActive: true,
     });
     if (!category) {
       return errorResponse(
@@ -175,10 +193,39 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const created = await MenuItem.create(validatedData);
-    return successResponse(created, 201);
+    const requestedAvailability = validatedData.available;
+    const created = await MenuItem.create({
+      ...validatedData,
+      categorySlug: category.slug,
+      available: validatedData.inventoryCount > 0 ? false : requestedAvailability,
+      inStock: validatedData.inventoryCount > 0,
+    });
+    if (validatedData.inventoryCount > 0) {
+      try {
+        await InventoryMovement.create({
+          restaurantId: created.restaurantId,
+          menuItemId: created._id,
+          movementType: "restock",
+          quantity: validatedData.inventoryCount,
+          previousCount: 0,
+          newCount: validatedData.inventoryCount,
+          reason: "Initial stock",
+          performedByAdminId: authCheck.admin!._id,
+        });
+      } catch (err) {
+        await MenuItem.deleteOne({ _id: created._id, available: false });
+        throw err;
+      }
+    }
+    const item = validatedData.inventoryCount > 0
+      ? await MenuItem.findByIdAndUpdate(
+          created._id,
+          { $set: { available: requestedAvailability } },
+          { new: true }
+        )
+      : created;
+    return successResponse(item, 201);
   } catch (err) {
     return handleApiError(err);
   }
 }
-

@@ -1,6 +1,10 @@
 import { Router, Request, Response } from "express";
 import { OrderModel } from "../models/Order.js";
 import { createRazorpayOrder, verifyRazorpaySignature } from "../services/razorpay.service.js";
+import {
+  getDeliveryDistanceKm,
+  MAX_DELIVERY_DISTANCE_KM,
+} from "../utils/delivery.js";
 
 const router = Router();
 
@@ -19,6 +23,40 @@ router.post("/", async (req: Request, res: Response) => {
 
     if (!restaurantSlug || !items || items.length === 0 || !customerPhone || !deliveryAddress) {
       res.status(400).json({ success: false, error: "Missing required order fields" });
+      return;
+    }
+
+    if (restaurantSlug !== "veg" && restaurantSlug !== "non-veg") {
+      res.status(400).json({ success: false, error: "Invalid restaurant" });
+      return;
+    }
+
+    const coordinates = deliveryAddress.coordinates;
+    if (
+      !coordinates ||
+      typeof coordinates.latitude !== "number" ||
+      !Number.isFinite(coordinates.latitude) ||
+      coordinates.latitude < -90 ||
+      coordinates.latitude > 90 ||
+      typeof coordinates.longitude !== "number" ||
+      !Number.isFinite(coordinates.longitude) ||
+      coordinates.longitude < -180 ||
+      coordinates.longitude > 180
+    ) {
+      res.status(400).json({
+        success: false,
+        error: "Share your delivery location to check whether it is within the 5 km delivery range.",
+      });
+      return;
+    }
+
+    const distanceKm = getDeliveryDistanceKm(restaurantSlug, coordinates);
+    if (distanceKm > MAX_DELIVERY_DISTANCE_KM) {
+      res.status(400).json({
+        success: false,
+        error: `This address is ${distanceKm.toFixed(1)} km from the kitchen. Delivery is available only within 5 km.`,
+        data: { distanceKm, maxDeliveryDistanceKm: MAX_DELIVERY_DISTANCE_KM },
+      });
       return;
     }
 
@@ -126,4 +164,3 @@ router.get("/:orderNumber", async (req: Request, res: Response) => {
 });
 
 export default router;
-

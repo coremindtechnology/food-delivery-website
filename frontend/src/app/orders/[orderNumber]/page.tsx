@@ -20,12 +20,14 @@ import {
 import { Button } from "@/components/ui/Button";
 import { RestaurantBadge } from "@/components/restaurant/RestaurantBadge";
 import { formatCurrency } from "@/lib/utils";
+import { launchRazorpayCheckout } from "@/lib/razorpay-client";
 
 interface OrderData {
   _id: string;
   orderNumber: string;
   restaurantId: string;
   restaurantSlug: "veg" | "non-veg";
+  fulfillmentType: "delivery" | "takeaway";
   customerName: string;
   customerPhone: string;
   deliveryAddress: {
@@ -52,14 +54,9 @@ interface OrderData {
   totalAmount: number;
   paymentMethod: "cod" | "razorpay";
   paymentStatus: string;
-  orderStatus:
-    | "placed"
-    | "confirmed"
-    | "preparing"
-    | "ready_for_pickup"
-    | "out_for_delivery"
-    | "delivered"
-    | "cancelled";
+  cashCollectedAmount: number;
+  cashOutstandingAmount: number;
+  orderStatus: string;
   deliveryNotes?: string;
   placedAt: string;
 }
@@ -74,10 +71,11 @@ interface RestaurantData {
 }
 
 const STATUS_STEPS = [
-  { key: "placed", label: "Order Placed", icon: CheckCircle2, description: "Received by restaurant" },
-  { key: "confirmed", label: "Confirmed", icon: Clock, description: "Kitchen verified your order" },
+  { key: "new", label: "Order Received", icon: CheckCircle2, description: "Received by restaurant" },
+  { key: "accepted", label: "Accepted", icon: Clock, description: "Kitchen verified your order" },
   { key: "preparing", label: "Preparing", icon: ChefHat, description: "Freshly cooking your meal" },
-  { key: "out_for_delivery", label: "On the Way", icon: Bike, description: "Rider dispatched" },
+  { key: "ready", label: "Ready", icon: PackageCheck, description: "Order ready for dispatch" },
+  { key: "dispatched", label: "On the Way", icon: Bike, description: "Rider dispatched" },
   { key: "delivered", label: "Delivered", icon: PackageCheck, description: "Enjoy your food!" },
 ];
 
@@ -90,6 +88,8 @@ export default function OrderTrackingPage() {
   const [restaurant, setRestaurant] = useState<RestaurantData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isPaying, setIsPaying] = useState(false);
+  const [paymentError, setPaymentError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!orderNumber) return;
@@ -154,16 +154,31 @@ export default function OrderTrackingPage() {
 
   // Calculate current active step index
   const statusRank: Record<string, number> = {
+    pending_payment: -1,
+    new: 0,
     placed: 0,
+    accepted: 1,
     confirmed: 1,
     preparing: 2,
-    ready_for_pickup: 2,
-    out_for_delivery: 3,
-    delivered: 4,
+    ready: 3,
+    ready_for_pickup: 3,
+    dispatched: 4,
+    out_for_delivery: 4,
+    delivered: 5,
+    rejected: -1,
     cancelled: -1,
   };
 
   const currentRank = statusRank[order.orderStatus] ?? 0;
+  const statusSteps = order.fulfillmentType === "takeaway"
+    ? STATUS_STEPS.filter((step) => step.key !== "dispatched").map((step) =>
+        step.key === "ready" ? { ...step, label: "Ready for Pickup" } : step
+      )
+    : STATUS_STEPS;
+  const visibleStatusRank =
+    order.fulfillmentType === "takeaway" && order.orderStatus === "delivered"
+      ? statusSteps.length - 1
+      : currentRank;
 
   return (
     <div className="bg-cream-100/50 min-h-screen py-8 px-4 sm:px-6 lg:px-8">
@@ -171,12 +186,18 @@ export default function OrderTrackingPage() {
         {/* Top Success Banner */}
         <div className="bg-white p-6 rounded-3xl border border-cream-200 shadow-soft text-center sm:text-left sm:flex items-center justify-between gap-6">
           <div className="flex items-center gap-4 mb-4 sm:mb-0">
-            <div className="w-14 h-14 rounded-2xl bg-emerald-100 text-emerald-600 flex items-center justify-center flex-shrink-0">
+            <div className="w-14 h-14 rounded-2xl bg-success-100 text-success-600 flex items-center justify-center flex-shrink-0">
               <CheckCircle2 className="w-8 h-8" />
             </div>
             <div>
               <span className="text-[11px] font-bold uppercase tracking-wider text-charcoal-400">
-                Order Received
+                {order.orderStatus === "cancelled"
+                  ? "Order Cancelled"
+                  : order.orderStatus === "rejected"
+                    ? "Order Rejected"
+                    : order.orderStatus === "pending_payment"
+                      ? "Payment Required"
+                      : "Order Received"}
               </span>
               <h1 className="text-xl sm:text-2xl font-black text-charcoal-900 font-display">
                 {order.orderNumber}
@@ -201,6 +222,82 @@ export default function OrderTrackingPage() {
         </div>
 
         {/* Live Stepper Tracker */}
+        {order.paymentMethod === "razorpay" &&
+          ["pending", "failed"].includes(order.paymentStatus) &&
+          order.orderStatus === "pending_payment" && (
+            <div className="bg-amber-50 p-5 rounded-3xl border border-amber-200">
+              <p className="text-sm font-bold text-amber-900">Payment is not confirmed</p>
+              <p className="text-xs text-amber-800 mt-1">
+                The order will be sent to the restaurant only after Razorpay confirms payment.
+              </p>
+              {paymentError && <p className="text-xs text-red-700 mt-2" role="alert">{paymentError}</p>}
+              <Button
+                className="mt-4"
+                isLoading={isPaying}
+                onClick={async () => {
+                  setIsPaying(true);
+                  setPaymentError(null);
+                  try {
+                    const initResponse = await fetch("/api/payments/razorpay/order", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({ orderNumber, attemptKey: crypto.randomUUID() }),
+                    });
+                    const initData = await initResponse.json();
+                    if (!initResponse.ok || !initData.success) {
+                      throw new Error(initData.error || "Unable to initialize payment.");
+                    }
+                    const paymentOrder = initData.data;
+                    const result = await launchRazorpayCheckout({
+                      key: paymentOrder.keyId,
+                      amount: paymentOrder.amount,
+                      currency: paymentOrder.currency,
+                      name: restaurant?.name || "Food Delivery",
+                      description: `Order ${orderNumber}`,
+                      order_id: paymentOrder.razorpayOrderId,
+                      prefill: { contact: order.customerPhone, name: order.customerName },
+                      theme: { color: "#FC8019" },
+                    });
+                    const verifyResponse = await fetch("/api/payments/razorpay/verify", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({ orderNumber, ...result }),
+                    });
+                    const verifyData = await verifyResponse.json();
+                    if (!verifyResponse.ok || !verifyData.success) {
+                      throw new Error(verifyData.error || "Payment verification is pending.");
+                    }
+                    if (!verifyData.data.verified) {
+                      throw new Error("Razorpay has not captured this payment yet.");
+                    }
+                    const orderResponse = await fetch(`/api/orders/${orderNumber}`);
+                    const orderData = await orderResponse.json();
+                    if (orderResponse.ok && orderData.success) setOrder(orderData.data.order);
+                  } catch (error) {
+                    if (!(error instanceof Error) || error.message !== "Payment window was closed.") {
+                      setPaymentError(error instanceof Error ? error.message : "Payment could not be verified.");
+                    }
+                  } finally {
+                    setIsPaying(false);
+                  }
+                }}
+              >
+                Pay securely with Razorpay
+              </Button>
+            </div>
+          )}
+        {order.paymentMethod === "razorpay" &&
+          order.paymentStatus === "authorized" &&
+          order.orderStatus === "pending_payment" && (
+            <p className="rounded-2xl border border-blue-200 bg-blue-50 p-4 text-sm text-blue-900">
+              Razorpay authorized this payment; the server is waiting for capture confirmation. Do not retry the payment.
+            </p>
+          )}
+        {order.orderStatus === "dispatched" && (
+          <div className="rounded-2xl border border-blue-200 bg-blue-50 p-4 text-sm text-blue-900">
+            Your delivery confirmation code is sent to your verified phone by SMS. Share it with the assigned rider only when your order arrives.
+          </div>
+        )}
         <div className="bg-white p-6 sm:p-8 rounded-3xl border border-cream-200 shadow-soft">
           <h2 className="text-base font-bold text-charcoal-900 font-display mb-6">
             Live Order Status
@@ -211,10 +308,10 @@ export default function OrderTrackingPage() {
             <div className="hidden sm:block absolute top-1/2 left-6 right-6 -translate-y-1/2 h-1 bg-cream-200 -z-0" />
 
             <div className="grid grid-cols-1 sm:grid-cols-5 gap-6 sm:gap-2 relative z-10">
-              {STATUS_STEPS.map((step, index) => {
+              {statusSteps.map((step, index) => {
                 const Icon = step.icon;
-                const isCompleted = index <= currentRank;
-                const isCurrent = index === currentRank;
+                const isCompleted = index <= visibleStatusRank;
+                const isCurrent = index === visibleStatusRank;
 
                 return (
                   <div
@@ -226,7 +323,7 @@ export default function OrderTrackingPage() {
                         isCurrent
                           ? "bg-primary-500 text-white shadow-soft scale-110 ring-4 ring-primary-100"
                           : isCompleted
-                          ? "bg-emerald-600 text-white"
+                          ? "bg-success-600 text-white"
                           : "bg-cream-100 text-charcoal-400 border border-cream-200"
                       }`}
                     >
@@ -298,7 +395,7 @@ export default function OrderTrackingPage() {
                 <span className="font-semibold text-charcoal-900">{formatCurrency(order.subtotal)}</span>
               </div>
               {order.discountAmount > 0 && (
-                <div className="flex justify-between text-emerald-700 font-semibold">
+                <div className="flex justify-between text-success-700 font-semibold">
                   <span>Coupon Discount ({order.couponCode})</span>
                   <span>-{formatCurrency(order.discountAmount)}</span>
                 </div>
@@ -314,9 +411,15 @@ export default function OrderTrackingPage() {
                 <span className="font-semibold text-charcoal-900">{formatCurrency(order.taxAmount)}</span>
               </div>
               <div className="flex justify-between text-base font-extrabold text-charcoal-900 pt-3 border-t border-cream-200">
-                <span>Total Paid / Payable</span>
-                <span>{formatCurrency(order.totalAmount)}</span>
+                <span>{order.paymentMethod === "cod" ? "COD Outstanding" : "Order Total"}</span>
+                <span>{formatCurrency(order.paymentMethod === "cod" ? order.cashOutstandingAmount : order.totalAmount)}</span>
               </div>
+              {order.paymentMethod === "cod" && (
+                <div className="flex justify-between text-xs text-charcoal-600">
+                  <span>Cash collected / outstanding</span>
+                  <span>{formatCurrency(order.cashCollectedAmount)} / {formatCurrency(order.cashOutstandingAmount)}</span>
+                </div>
+              )}
               <div className="pt-2 flex justify-between text-[11px] text-charcoal-500">
                 <span>Payment Mode</span>
                 <span className="uppercase font-bold text-charcoal-800">
@@ -386,4 +489,3 @@ export default function OrderTrackingPage() {
     </div>
   );
 }
-

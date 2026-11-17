@@ -2,6 +2,7 @@ import crypto from "crypto";
 import type { Types } from "mongoose";
 import { connectToDatabase } from "@/lib/mongodb";
 import { AuditLog } from "@/models/AuditLog";
+import { getServerSecret } from "@/lib/server-secrets";
 
 // ── 1. Secure Password Hashing (scrypt + 32-byte salt) ──────────────────────────
 
@@ -54,7 +55,7 @@ export async function verifyPassword(password: string, storedHash: string): Prom
 // ── 2. Encrypted TOTP Secrets at Rest (AES-256-GCM) ──────────────────────────────
 
 function getMasterEncryptionKey(): Buffer {
-  const secret = process.env.ADMIN_JWT_SECRET || process.env.JWT_SECRET || "default_super_admin_vault_master_key_32";
+  const secret = getServerSecret("ADMIN_JWT_SECRET", "default_super_admin_vault_master_key_32");
   return crypto.createHash("sha256").update(secret).digest();
 }
 
@@ -204,6 +205,7 @@ export interface RecordAuditParams {
   actorId?: Types.ObjectId | string;
   action: string;
   entity:
+    | "Expense"
     | "Restaurant"
     | "MenuCategory"
     | "MenuItem"
@@ -211,7 +213,8 @@ export interface RecordAuditParams {
     | "Payment"
     | "Refund"
     | "Inventory"
-    | "Admin";
+    | "Admin"
+    | "Customer";
   entityId?: Types.ObjectId | string;
   previousState?: Record<string, unknown>;
   newState?: Record<string, unknown>;

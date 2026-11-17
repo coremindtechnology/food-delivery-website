@@ -169,6 +169,70 @@ const adminUserSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+const customerSchema = new mongoose.Schema(
+  {
+    phone: { type: String, unique: true, required: true },
+    name: String,
+    email: String,
+    isVerified: { type: Boolean, default: true },
+    isBlocked: { type: Boolean, default: false },
+  },
+  { timestamps: true }
+);
+
+const deliveryPersonnelSchema = new mongoose.Schema(
+  {
+    name: { type: String, required: true },
+    phone: { type: String, unique: true, required: true },
+    passwordHash: { type: String, required: true },
+    vehicleNumber: { type: String, required: true },
+    status: { type: String, default: "available" },
+    isBlocked: { type: Boolean, default: false },
+  },
+  { timestamps: true }
+);
+
+const orderSchema = new mongoose.Schema(
+  {
+    orderNumber: { type: String, unique: true, uppercase: true, required: true },
+    restaurantId: mongoose.Schema.Types.ObjectId,
+    restaurantSlug: String,
+    fulfillmentType: { type: String, default: "delivery" },
+    customerId: mongoose.Schema.Types.ObjectId,
+    customerName: String,
+    customerPhone: String,
+    customerEmail: String,
+    deliveryAddress: {
+      street: String,
+      city: String,
+      state: String,
+      pincode: String,
+    },
+    items: [
+      {
+        menuItemId: mongoose.Schema.Types.ObjectId,
+        name: String,
+        image: String,
+        isVeg: Boolean,
+        price: Number,
+        quantity: Number,
+        itemTotalPrice: Number,
+      },
+    ],
+    subtotal: Number,
+    deliveryFee: { type: Number, default: 0 },
+    taxAmount: { type: Number, default: 0 },
+    discountAmount: { type: Number, default: 0 },
+    couponCode: String,
+    totalAmount: Number,
+    paymentMethod: { type: String, default: "cod" },
+    paymentStatus: { type: String, default: "paid" },
+    orderStatus: { type: String, default: "new" },
+    placedAt: { type: Date, default: Date.now },
+  },
+  { timestamps: true }
+);
+
 // Guard against hot-reload re-registration
 const RestaurantModel =
   mongoose.models.Restaurant || mongoose.model("Restaurant", restaurantSchema);
@@ -180,73 +244,67 @@ const CouponModel =
   mongoose.models.Coupon || mongoose.model("Coupon", couponSchema);
 const AdminUserModel =
   mongoose.models.AdminUser || mongoose.model("AdminUser", adminUserSchema);
+const CustomerModel =
+  mongoose.models.Customer || mongoose.model("Customer", customerSchema);
+const DeliveryPersonnelModel =
+  mongoose.models.DeliveryPersonnel || mongoose.model("DeliveryPersonnel", deliveryPersonnelSchema);
+const OrderModel =
+  mongoose.models.Order || mongoose.model("Order", orderSchema);
 
 // ── Sample restaurant data ─────────────────────────────────────────────────────
 const vegRestaurantData = {
-  name: "Sample Client Pure Veg Kitchen",
+  name: "Sai Baba Dhaba and Family Restaurant",
   slug: "veg",
   type: "veg",
-  subtitle: "Authentic Pure Vegetarian, South & North Indian Delicacies",
-  description:
-    "100% pure vegetarian cloud kitchen serving heritage thalis, fresh paneer specialties, crispy dosas, rich gravies, and handcrafted desserts made with pure desi ghee.",
+  subtitle: "Vegetarian food only",
+  description: "Vegetarian food served in Bhanpur, Bhopal.",
   heroImage:
     "https://images.unsplash.com/photo-1546833999-b9f581a1996d?auto=format&fit=crop&w=1200&q=80",
   fssaiLicenseNumber: "10019011007999",
   contactPhone: "+91-98765-43210",
   contactEmail: "veg@sampleclientkitchen.dev",
   address: {
-    street: "Block 4, Gourmet Plaza, Culinary Avenue",
-    city: "Metro City",
-    state: "Maharashtra",
-    pincode: "400001",
+    street: "Sai Baba Dhaba and Family Restaurant, Bhanpur",
+    city: "Bhopal",
+    state: "Madhya Pradesh",
+    pincode: "462038",
   },
   openingHours: "10:00 AM - 11:30 PM",
   deliveryTime: "25-35 min",
   minOrderAmount: 199,
   priceRange: "₹₹",
   accentColor: "#16A34A",
-  bannerText: "Pure Vegetarian Kitchen • Desi Ghee Specials",
-  features: [
-    "100% Pure Vegetarian Dedicated Kitchen",
-    "Pure Desi Ghee & Fresh Farm Produce",
-    "Hygienic Tamper-Proof Packaging",
-    "Separate Utensils & Strict Segregation",
-  ],
+  bannerText: "Vegetarian food only",
+  features: ["Vegetarian food only"],
   rating: 4.8,
   reviewCount: 1420,
   isOpen: true,
 };
 
 const nonVegRestaurantData = {
-  name: "Sample Client Non-Veg Grill & Curries",
+  name: "New Bhopal Dhaba & Family Restaurant",
   slug: "non-veg",
   type: "non-veg",
-  subtitle: "Smoky Kebabs, Dum Biryanis, Slow-Cooked Meat & Coastal Seafood",
-  description:
-    "Specialty non-vegetarian kitchen offering fire-roasted tandoori meats, royal Dum Biryanis, slow-simmered rich curries, and succulent grilled poultry seasoned with whole artisanal spices.",
+  subtitle: "Non-vegetarian food only",
+  description: "Non-vegetarian food served in Bhanpur, Bhopal.",
   heroImage:
     "https://images.unsplash.com/photo-1555939594-58d7cb561ad1?auto=format&fit=crop&w=1200&q=80",
   fssaiLicenseNumber: "10019011008000",
   contactPhone: "+91-98765-43211",
   contactEmail: "nonveg@sampleclientkitchen.dev",
   address: {
-    street: "Block 5, Gourmet Plaza, Culinary Avenue",
-    city: "Metro City",
-    state: "Maharashtra",
-    pincode: "400001",
+    street: "Opp. Patel Market, Bhanpur",
+    city: "Bhopal",
+    state: "Madhya Pradesh",
+    pincode: "462038",
   },
   openingHours: "11:00 AM - 12:00 AM",
   deliveryTime: "30-40 min",
   minOrderAmount: 249,
   priceRange: "₹₹₹",
   accentColor: "#DC2626",
-  bannerText: "Signature Tandoori & Royal Biryanis • Fresh Cuts Daily",
-  features: [
-    "Authentic Charcoal Tandoor & Smoker",
-    "Tender Halal-Certified Fresh Cuts",
-    "Signature Dum Biryani Handis",
-    "Dedicated Independent Cooking Facility",
-  ],
+  bannerText: "Non-vegetarian food only",
+  features: ["Non-vegetarian food only"],
   rating: 4.9,
   reviewCount: 1890,
   isOpen: true,
@@ -791,13 +849,235 @@ async function seed() {
   const createdCoupons = await CouponModel.insertMany(sampleCoupons);
   console.log(`    ✔ Promotional coupons → ${createdCoupons.length} created`);
 
+  // ── Seed Admin Users
+  console.log("\n🌱  Seeding Admin Users...");
+  await AdminUserModel.deleteMany({});
+  const superAdminHash = await hashPass("AdminPassword@123");
+  const vegManagerHash = await hashPass("ManagerPassword@123");
+  const nonVegManagerHash = await hashPass("ManagerPassword@123");
+
+  const createdAdmins = await AdminUserModel.create([
+    {
+      name: "Main Super Admin",
+      email: "admin@dualkitchens.com",
+      phone: "9876543210",
+      passwordHash: superAdminHash,
+      role: "super_admin",
+      isActive: true,
+      totpEnabled: false,
+    },
+    {
+      name: "Veg Kitchen Manager",
+      email: "vegmanager@dualkitchens.com",
+      phone: "9876543211",
+      passwordHash: vegManagerHash,
+      role: "veg_manager",
+      assignedRestaurantId: vegRest._id,
+      isActive: true,
+      totpEnabled: false,
+    },
+    {
+      name: "Non-Veg Kitchen Manager",
+      email: "nonvegmanager@dualkitchens.com",
+      phone: "9876543212",
+      passwordHash: nonVegManagerHash,
+      role: "nonveg_manager",
+      assignedRestaurantId: nonVegRest._id,
+      isActive: true,
+      totpEnabled: false,
+    },
+  ]);
+  console.log(`    ✔ Admin accounts     → ${createdAdmins.length} created (login: admin@dualkitchens.com / AdminPassword@123)`);
+
+  // ── Seed Delivery Personnel
+  console.log("\n🌱  Seeding Delivery Personnel...");
+  await DeliveryPersonnelModel.deleteMany({});
+  const riderHash = await hashPass("RiderPassword@123");
+  const createdRiders = await DeliveryPersonnelModel.create([
+    {
+      name: "Amit Verma",
+      phone: "9876543210",
+      passwordHash: riderHash,
+      vehicleNumber: "MP-04-EA-7842",
+      status: "available",
+      isBlocked: false,
+    },
+    {
+      name: "Rahul Sharma",
+      phone: "9876543211",
+      passwordHash: riderHash,
+      vehicleNumber: "MP-04-TR-1289",
+      status: "available",
+      isBlocked: false,
+    },
+  ]);
+  console.log(`    ✔ Delivery personnel → ${createdRiders.length} created (Amit Verma, Rahul Sharma)`);
+
+  // ── Seed Sample Customer
+  console.log("\n🌱  Seeding Sample Customer...");
+  await CustomerModel.deleteMany({});
+  const sampleCustomer = await CustomerModel.create({
+    name: "Gourav Verma",
+    phone: "9876543210",
+    email: "customer@dualkitchens.com",
+    isVerified: true,
+  });
+  console.log(`    ✔ Sample Customer    → created: ${sampleCustomer.phone}`);
+
+  // ── Seed Sample Orders
+  console.log("\n🌱  Seeding Sample Orders...");
+  await OrderModel.deleteMany({});
+
+  const chickenDish = nonVegItems[0];
+  const chickenTandoori = nonVegItems[1] || nonVegItems[0];
+  const paneerDish = vegItems[0];
+  const naanDish = vegItems[1] || vegItems[0];
+
+  const createdOrders = await OrderModel.create([
+    {
+      orderNumber: "DK-12547",
+      restaurantId: nonVegRest._id,
+      restaurantSlug: "non-veg",
+      fulfillmentType: "delivery",
+      customerId: sampleCustomer._id,
+      customerName: "Gourav Verma",
+      customerPhone: "9876543210",
+      customerEmail: "customer@dualkitchens.com",
+      deliveryAddress: {
+        street: "Patel Nagar, Near City Square",
+        city: "Bhopal",
+        state: "Madhya Pradesh",
+        pincode: "462038",
+      },
+      items: [
+        {
+          menuItemId: chickenDish._id,
+          name: "Chicken Biryani",
+          image: chickenDish.image,
+          isVeg: false,
+          price: 349,
+          quantity: 1,
+          itemTotalPrice: 349,
+        },
+        {
+          menuItemId: chickenTandoori._id,
+          name: "Tandoori Chicken (Half)",
+          image: chickenTandoori.image,
+          isVeg: false,
+          price: 399,
+          quantity: 1,
+          itemTotalPrice: 399,
+        },
+        {
+          menuItemId: chickenDish._id,
+          name: "Mint Raita",
+          image: "https://images.unsplash.com/photo-1546833999-b9f581a1996d?auto=format&fit=crop&w=400&q=80",
+          isVeg: true,
+          price: 81,
+          quantity: 1,
+          itemTotalPrice: 81,
+        },
+      ],
+      subtotal: 829,
+      deliveryFee: 0,
+      taxAmount: 0,
+      discountAmount: 0,
+      totalAmount: 829,
+      paymentMethod: "cod",
+      paymentStatus: "paid",
+      orderStatus: "dispatched",
+      placedAt: new Date(Date.now() - 35 * 60 * 1000),
+    },
+    {
+      orderNumber: "DK-84920",
+      restaurantId: vegRest._id,
+      restaurantSlug: "veg",
+      fulfillmentType: "delivery",
+      customerId: sampleCustomer._id,
+      customerName: "Gourav Verma",
+      customerPhone: "9876543210",
+      deliveryAddress: {
+        street: "Bhanpur Sector 2",
+        city: "Bhopal",
+        state: "Madhya Pradesh",
+        pincode: "462038",
+      },
+      items: [
+        {
+          menuItemId: paneerDish._id,
+          name: paneerDish.name,
+          image: paneerDish.image,
+          isVeg: true,
+          price: paneerDish.price,
+          quantity: 1,
+          itemTotalPrice: paneerDish.price,
+        },
+        {
+          menuItemId: naanDish._id,
+          name: naanDish.name,
+          image: naanDish.image,
+          isVeg: true,
+          price: naanDish.price,
+          quantity: 2,
+          itemTotalPrice: naanDish.price * 2,
+        },
+      ],
+      subtotal: paneerDish.price + naanDish.price * 2,
+      deliveryFee: 0,
+      taxAmount: 0,
+      totalAmount: paneerDish.price + naanDish.price * 2,
+      paymentMethod: "razorpay",
+      paymentStatus: "paid",
+      orderStatus: "preparing",
+      placedAt: new Date(Date.now() - 15 * 60 * 1000),
+    },
+    {
+      orderNumber: "DK-51923",
+      restaurantId: vegRest._id,
+      restaurantSlug: "veg",
+      fulfillmentType: "delivery",
+      customerId: sampleCustomer._id,
+      customerName: "Gourav Verma",
+      customerPhone: "9876543210",
+      deliveryAddress: {
+        street: "Bhanpur Market",
+        city: "Bhopal",
+        state: "Madhya Pradesh",
+        pincode: "462038",
+      },
+      items: [
+        {
+          menuItemId: paneerDish._id,
+          name: paneerDish.name,
+          image: paneerDish.image,
+          isVeg: true,
+          price: paneerDish.price,
+          quantity: 2,
+          itemTotalPrice: paneerDish.price * 2,
+        },
+      ],
+      subtotal: paneerDish.price * 2,
+      deliveryFee: 0,
+      taxAmount: 0,
+      totalAmount: paneerDish.price * 2,
+      paymentMethod: "razorpay",
+      paymentStatus: "paid",
+      orderStatus: "delivered",
+      placedAt: new Date(Date.now() - 2 * 60 * 60 * 1000),
+    },
+  ]);
+  console.log(`    ✔ Sample Orders      → ${createdOrders.length} created (DK-12547, DK-84920, DK-51923)`);
+
   // ── Summary
-  console.log("\n✅  Seed complete!");
+  console.log("\n✅  Complete Database Setup & Seeding successful!");
   console.log("─────────────────────────────────────────────");
-  console.log(`    Restaurants : 2`);
-  console.log(`    Categories  : ${vegCats.length + nonVegCats.length}`);
-  console.log(`    Menu Items  : ${vegItems.length + nonVegItems.length}`);
-  console.log(`    Coupons     : ${createdCoupons.length}`);
+  console.log(`    Restaurants         : 2`);
+  console.log(`    Categories          : ${vegCats.length + nonVegCats.length}`);
+  console.log(`    Menu Items          : ${vegItems.length + nonVegItems.length}`);
+  console.log(`    Coupons             : ${createdCoupons.length}`);
+  console.log(`    Admin Accounts      : ${createdAdmins.length}`);
+  console.log(`    Delivery Personnel  : ${createdRiders.length}`);
+  console.log(`    Sample Orders       : ${createdOrders.length}`);
   console.log("─────────────────────────────────────────────\n");
 
   await mongoose.disconnect();
@@ -808,4 +1088,3 @@ seed().catch((err) => {
   mongoose.disconnect();
   process.exit(1);
 });
-

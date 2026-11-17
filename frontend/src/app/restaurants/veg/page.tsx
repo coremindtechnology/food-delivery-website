@@ -4,7 +4,6 @@ import React, { useState, useMemo } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import {
-  Star,
   Clock,
   ShieldCheck,
   ShoppingBag,
@@ -14,7 +13,6 @@ import {
   UtensilsCrossed,
 } from "lucide-react";
 import { SAMPLE_RESTAURANTS } from "@/data/restaurants";
-import { SAMPLE_FOODS, CATEGORIES } from "@/data/foods";
 import { FoodCard } from "@/components/food/FoodCard";
 import { RestaurantBadge } from "@/components/restaurant/RestaurantBadge";
 import { MenuFilterBar, SortOption, PriceFilter } from "@/components/menu/MenuFilterBar";
@@ -24,16 +22,19 @@ import { Button } from "@/components/ui/Button";
 import { Notification } from "@/components/ui/Notification";
 import { FoodItem, CartItem } from "@/types";
 import { useCart } from "@/context/CartContext";
+import { useMenuCatalog } from "@/lib/use-menu-catalog";
 
 export default function VegRestaurantPage() {
   const restaurant = SAMPLE_RESTAURANTS.find((r) => r.slug === "veg")!;
+  const { foods, categories, restaurantIds, loading: menuLoading, error: menuError } = useMenuCatalog("veg");
+  const restaurantId = restaurantIds.veg || restaurant.id;
 
   // Filter & Search states
   const { addItem } = useCart();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [selectedSubcategory, setSelectedSubcategory] = useState("all");
-  const [sortBy, setSortBy] = useState<SortOption>("popular");
+  const [sortBy, setSortBy] = useState<SortOption>("menu-order");
   const [priceFilter, setPriceFilter] = useState<PriceFilter>("all");
   const [onlyPopular, setOnlyPopular] = useState(false);
   const [onlyChefSpecial, setOnlyChefSpecial] = useState(false);
@@ -44,10 +45,8 @@ export default function VegRestaurantPage() {
 
   // Filter only Veg items that are ACTIVE/AVAILABLE (Rule: "Do not display unavailable items in normal menu listings")
   const baseVegFoods = useMemo(() => {
-    return SAMPLE_FOODS.filter(
-      (f) => f.restaurantSlug === "veg" && f.available !== false
-    );
-  }, []);
+    return foods.filter((f) => f.restaurantSlug === "veg" && f.available);
+  }, [foods]);
 
   // Filter & sort logic
   const filteredFoods = useMemo(() => {
@@ -130,7 +129,7 @@ export default function VegRestaurantPage() {
     setPriceFilter("all");
     setOnlyPopular(false);
     setOnlyChefSpecial(false);
-    setSortBy("popular");
+    setSortBy("menu-order");
   };
 
   const handleAddToCart = (food: FoodItem) => {
@@ -151,7 +150,7 @@ export default function VegRestaurantPage() {
           : undefined,
       },
       {
-        id: restaurant.id,
+        id: restaurantId,
         slug: "veg",
         name: restaurant.name,
         minOrder: restaurant.minOrder,
@@ -188,7 +187,7 @@ export default function VegRestaurantPage() {
         specialInstructions: customizedItem.specialInstructions,
       },
       {
-        id: restaurant.id,
+        id: restaurantId,
         slug: "veg",
         name: restaurant.name,
         minOrder: restaurant.minOrder,
@@ -201,7 +200,8 @@ export default function VegRestaurantPage() {
   };
 
   return (
-    <div className="pb-24 space-y-10 bg-cream-50/50 min-h-screen">
+    <div className="pb-24 space-y-10 bg-white min-h-screen">
+      {menuError && <p role="status" className="mx-auto max-w-7xl px-4 pt-4 text-sm text-amber-800">{menuError}</p>}
       {/* Toast Alert */}
       {cartAlert && (
         <div className="fixed bottom-6 right-6 z-50 max-w-md animate-in slide-in-from-bottom-5">
@@ -271,12 +271,6 @@ export default function VegRestaurantPage() {
               </span>
             </div>
 
-            <div className="absolute top-4 right-4 flex items-center gap-1.5 rounded-xl bg-charcoal-900/80 px-3 py-1.5 text-white backdrop-blur-sm text-sm font-bold">
-              <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
-              <span>{restaurant.rating.toFixed(1)}</span>
-              <span className="text-white/70 text-xs">({restaurant.reviewCount} reviews)</span>
-            </div>
-
             <div className="absolute bottom-5 left-5 right-5 text-white max-w-3xl">
               <h1 className="font-display text-2xl sm:text-4xl font-extrabold tracking-tight drop-shadow-md">
                 {restaurant.name}
@@ -323,25 +317,29 @@ export default function VegRestaurantPage() {
 
       {/* Menu Filter & Search Controls */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-cream-200 pb-3">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-[#FAF7F0] px-5 py-5 sm:px-7">
           <div>
-            <h2 className="font-display text-2xl font-bold text-charcoal-900">
-              Pure Veg Restaurant Menu
+            <h2 className="flex flex-wrap items-center gap-x-2 font-display text-2xl font-bold leading-tight text-charcoal-900 sm:text-3xl">
+              <Leaf aria-hidden="true" className="h-6 w-6 fill-[#65a30d] text-[#65a30d] sm:h-7 sm:w-7" />
+              <span className="text-[#20813b]">Pure Veg</span>
+              <span>Restaurant Menu</span>
+              <Leaf aria-hidden="true" className="hidden h-6 w-6 fill-[#65a30d] text-[#65a30d] sm:block sm:h-7 sm:w-7" />
             </h2>
-            <p className="text-xs text-charcoal-500 mt-0.5">
+            <p className="mt-1 text-sm text-charcoal-600">
               Showing {filteredFoods.length} of {baseVegFoods.length} authentic dishes
             </p>
           </div>
 
-          <div className="inline-flex items-center gap-1.5 text-xs text-veg-700 font-semibold bg-veg-100/80 px-3 py-1 rounded-xl">
-            <Sparkles className="w-3.5 h-3.5 text-veg-600" />
+          <div className="inline-flex w-fit items-center gap-2 rounded-full border border-[#dbe8c7] bg-[#eaf2dc] px-4 py-2.5 text-sm font-bold text-[#26713a]">
+            <Leaf aria-hidden="true" className="h-5 w-5 fill-[#65a30d] text-[#4d8d27]" />
             <span>Pure Vegetarian Kitchen Only</span>
+            <Sparkles aria-hidden="true" className="ml-1 h-4 w-4 text-amber-500" />
           </div>
         </div>
 
         {/* Reusable MenuFilterBar */}
         <MenuFilterBar
-          categories={CATEGORIES}
+          categories={categories.filter((category) => category.restaurantType === "veg" || category.restaurantType === "both")}
           selectedCategory={selectedCategory}
           onSelectCategory={setSelectedCategory}
           selectedSubcategory={selectedSubcategory}
@@ -362,7 +360,9 @@ export default function VegRestaurantPage() {
         />
 
         {/* Dishes Listing */}
-        {filteredFoods.length > 0 ? (
+        {menuLoading ? (
+          <p className="py-12 text-center text-sm text-charcoal-500">Loading the latest menu...</p>
+        ) : filteredFoods.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-6 pt-2">
             {filteredFoods.map((food) => (
               <FoodCard

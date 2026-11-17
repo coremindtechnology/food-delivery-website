@@ -5,6 +5,7 @@ import { Restaurant } from "@/models/Restaurant";
 import { CreateCategorySchema } from "@/lib/validations/category";
 import { PaginationQuerySchema, ObjectIdSchema } from "@/lib/validations/common";
 import { successResponse, errorResponse, handleApiError } from "@/lib/api-response";
+import { verifyAdminPermissions } from "@/lib/admin-auth";
 
 // GET /api/categories?restaurantId=&page=&limit=&search=&includeArchived=
 export async function GET(req: NextRequest) {
@@ -35,10 +36,11 @@ export async function GET(req: NextRequest) {
       includeArchived: searchParams.get("includeArchived") ?? undefined,
     });
 
-    const filter: Record<string, unknown> = { restaurantId };
-    if (!parsedQuery.includeArchived) {
-      filter.isArchived = { $ne: true };
-    }
+    const filter: Record<string, unknown> = {
+      restaurantId,
+      isArchived: { $ne: true },
+      isActive: true,
+    };
     if (parsedQuery.search) {
       const q = parsedQuery.search;
       filter.$or = [
@@ -95,6 +97,14 @@ export async function POST(req: NextRequest) {
       return errorResponse("Restaurant not found", 404);
     }
 
+    const authCheck = await verifyAdminPermissions(
+      ["super_admin", "restaurant_manager", "menu_manager", "veg_manager", "nonveg_manager"],
+      validatedData.restaurantId
+    );
+    if (!authCheck.authorized) {
+      return errorResponse(authCheck.error || "Unauthorized", authCheck.statusCode || 403);
+    }
+
     // Slug must be unique within a restaurant
     const existing = await MenuCategory.findOne({
       restaurantId: validatedData.restaurantId,
@@ -113,4 +123,3 @@ export async function POST(req: NextRequest) {
     return handleApiError(err);
   }
 }
-

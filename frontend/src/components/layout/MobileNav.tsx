@@ -3,7 +3,7 @@
 import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { X, Home, UtensilsCrossed, Phone, ShieldCheck, HeartHandshake, ShoppingBag, User, LogOut } from "lucide-react";
+import { X, Home, UtensilsCrossed, Phone, ShieldCheck, HeartHandshake, ShoppingBag, User, LogOut, Truck } from "lucide-react";
 import { RestaurantBadge } from "../restaurant/RestaurantBadge";
 import { Button } from "../ui/Button";
 import { cn } from "@/lib/utils";
@@ -24,6 +24,7 @@ export function MobileNav({ isOpen, onClose }: MobileNavProps) {
 
   const links = [
     { label: "Home", href: "/", icon: Home },
+    { label: "Order Tracking", href: "/track-order", icon: Truck },
     { label: "Pure Veg Kitchen", href: "/restaurants/veg", badge: "veg" as const },
     { label: "Non-Veg Grill & Curries", href: "/restaurants/non-veg", badge: "non-veg" as const },
     { label: "About Us", href: "/#about", icon: HeartHandshake },
@@ -200,7 +201,7 @@ export function MobileNav({ isOpen, onClose }: MobileNavProps) {
         {/* Footer in Drawer */}
         <div className="border-t border-cream-200 pt-4 space-y-3">
           <div className="flex items-center gap-2 text-xs text-charcoal-500">
-            <ShieldCheck className="w-4 h-4 text-emerald-600" />
+            <ShieldCheck className="w-4 h-4 text-success-600" />
             <span>Strict Kitchen Segregation</span>
           </div>
           <Link href="/#contact" onClick={onClose} className="block">
@@ -213,4 +214,3 @@ export function MobileNav({ isOpen, onClose }: MobileNavProps) {
     </div>
   );
 }
-

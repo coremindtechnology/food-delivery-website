@@ -49,6 +49,7 @@ export function FoodCard({ food, onAddToCart, onCustomize, className }: FoodCard
         <Link href={itemDetailsUrl} className="block relative mb-3.5 h-48 w-full overflow-hidden rounded-2xl bg-cream-100 cursor-pointer">
           <Image
             src={food.image}
+            unoptimized={food.image.startsWith("data:image/")}
             alt={food.name}
             fill
             sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
@@ -58,7 +59,7 @@ export function FoodCard({ food, onAddToCart, onCustomize, className }: FoodCard
 
           {/* Badges Overlay */}
           <div className="absolute top-2.5 left-2.5 flex flex-wrap gap-1.5">
-            <div className="rounded-lg bg-white/95 px-2 py-1 backdrop-blur-sm shadow-sm">
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-white/95 backdrop-blur-sm shadow-sm">
               <RestaurantBadge
                 type={food.isVeg ? "veg" : "non-veg"}
                 size="sm"
@@ -71,7 +72,7 @@ export function FoodCard({ food, onAddToCart, onCustomize, className }: FoodCard
               </span>
             )}
             {food.isPopular && !food.isChefSpecial && (
-              <span className="rounded-lg bg-primary-500/95 px-2 py-0.5 text-[10px] font-bold tracking-wide text-white shadow-sm backdrop-blur-sm uppercase">
+              <span className="inline-flex items-center rounded-lg bg-primary-500/95 px-2 py-0.5 text-[10px] font-bold tracking-wide text-white shadow-sm backdrop-blur-sm uppercase">
                 Popular
               </span>
             )}
@@ -155,7 +156,7 @@ export function FoodCard({ food, onAddToCart, onCustomize, className }: FoodCard
             className={cn(
               "flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-xs font-semibold transition-all duration-200 shadow-sm active:scale-95",
               added
-                ? "bg-emerald-600 text-white"
+                ? "bg-success-600 text-white"
                 : "bg-primary-500 hover:bg-primary-600 text-white hover:shadow"
             )}
             aria-label={`Add ${food.name} to order`}
@@ -168,7 +169,7 @@ export function FoodCard({ food, onAddToCart, onCustomize, className }: FoodCard
             ) : hasCustomizations ? (
               <>
                 <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
-                <span>Customise</span>
+                <span>Add to Cart</span>
               </>
             ) : (
               <>

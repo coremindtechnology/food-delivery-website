@@ -4,6 +4,7 @@ export interface ICustomer extends Document {
   phone: string;
   name?: string;
   email?: string;
+  notes?: string;
   isVerified: boolean;
   isBlocked: boolean;
   defaultAddressId?: mongoose.Types.ObjectId;
@@ -22,6 +23,7 @@ const CustomerSchema = new Schema<ICustomer>(
     },
     name: { type: String, trim: true },
     email: { type: String, trim: true, lowercase: true, index: true },
+    notes: { type: String, trim: true, maxlength: 1000 },
     isVerified: { type: Boolean, default: false, index: true },
     isBlocked: { type: Boolean, default: false, index: true },
     defaultAddressId: { type: Schema.Types.ObjectId, ref: "CustomerAddress" },
@@ -39,4 +41,3 @@ const CustomerSchema = new Schema<ICustomer>(
 
 export const Customer: Model<ICustomer> =
   mongoose.models.Customer || mongoose.model<ICustomer>("Customer", CustomerSchema);
-

@@ -1,8 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import { Header } from "@/components/layout/Header";
-import { Footer } from "@/components/layout/Footer";
 import { AppProviders } from "@/components/providers/AppProviders";
+import { SiteChrome } from "@/components/layout/SiteChrome";
 
 export const metadata: Metadata = {
   title: "Dual Kitchens | Premium Veg & Non-Veg Food Ordering",
@@ -25,14 +24,11 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className="min-h-screen flex flex-col bg-cream-50 font-sans antialiased selection:bg-primary-500 selection:text-white">
+      <body suppressHydrationWarning className="min-h-screen flex flex-col bg-cream-50 font-sans antialiased selection:bg-primary-500 selection:text-white">
         <AppProviders>
-          <Header />
-          <main className="flex-1">{children}</main>
-          <Footer />
+          <SiteChrome>{children}</SiteChrome>
         </AppProviders>
       </body>
     </html>
   );
 }
-

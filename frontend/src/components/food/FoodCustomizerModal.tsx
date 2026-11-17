@@ -2,9 +2,19 @@
 
 import React, { useState, useEffect, useId } from "react";
 import Image from "next/image";
-import { X, Plus, Minus, Check, Flame, Clock, Info } from "lucide-react";
+import {
+  ChefHat,
+  Clock,
+  Flame,
+  Heart,
+  Leaf,
+  Minus,
+  Plus,
+  ShoppingBasket,
+  UsersRound,
+  X,
+} from "lucide-react";
 import { FoodItem, ItemVariant, ItemAddon, CartItem } from "@/types";
-import { RestaurantBadge } from "../restaurant/RestaurantBadge";
 import { Button } from "../ui/Button";
 import { formatCurrency, cn } from "@/lib/utils";
 
@@ -21,7 +31,6 @@ export function FoodCustomizerModal({
   isOpen,
   onClose,
   onAddToCart,
-  accentColor = "primary",
 }: FoodCustomizerModalProps) {
   const instructionsId = useId();
   // State for customization
@@ -44,6 +53,23 @@ export function FoodCustomizerModal({
     }
   }, [food]);
 
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const previousOverflow = document.body.style.overflow;
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") onClose();
+    };
+
+    document.body.style.overflow = "hidden";
+    window.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [isOpen, onClose]);
+
   if (!isOpen || !food) return null;
 
   // Calculate base price from selected variant or default food price
@@ -53,11 +79,11 @@ export function FoodCustomizerModal({
   const grandTotal = singleItemTotal * quantity;
 
   const handleToggleAddon = (addon: ItemAddon) => {
-    if (selectedAddons.some((a) => a.id === addon.id)) {
-      setSelectedAddons(selectedAddons.filter((a) => a.id !== addon.id));
-    } else {
-      setSelectedAddons([...selectedAddons, addon]);
-    }
+    setSelectedAddons((current) =>
+      current.some((item) => item.id === addon.id)
+        ? current.filter((item) => item.id !== addon.id)
+        : [...current, addon]
+    );
   };
 
   const handleConfirm = () => {
@@ -73,94 +99,113 @@ export function FoodCustomizerModal({
   };
 
   const isVeg = food.isVeg;
+  const metrics = [
+    { label: food.preparationTime, Icon: Clock, tone: "text-[#27834b]" },
+    food.calories
+      ? { label: `${food.calories} kcal`, Icon: Flame, tone: "text-[#f17a2e]" }
+      : null,
+    food.serves
+      ? { label: food.serves, Icon: UsersRound, tone: "text-[#27834b]" }
+      : null,
+  ].filter((metric): metric is NonNullable<typeof metric> => metric !== null);
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto">
-      {/* Backdrop */}
-      <div
-        className="fixed inset-0 bg-charcoal-900/60 backdrop-blur-sm transition-opacity"
+    <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-[#111711]/70 p-3 backdrop-blur-sm sm:p-6">
+      <button
+        type="button"
+        className="absolute inset-0 h-full w-full cursor-default"
         onClick={onClose}
-        aria-hidden="true"
+        aria-label="Close food customizer"
       />
-
-      {/* Modal Dialog Container */}
-      <div className="flex min-h-full items-center justify-center p-4 sm:p-6 text-center">
+      <div className="relative z-10 flex min-h-0 w-full items-center justify-center">
         <div
-          className="relative w-full max-w-lg transform overflow-hidden rounded-3xl bg-white text-left align-middle shadow-2xl transition-all border border-cream-200"
+          className="relative flex max-h-[92vh] w-full max-w-[500px] flex-col overflow-hidden rounded-[24px] border border-[#e5e3db] bg-[#fffdf8] text-left shadow-[0_24px_70px_rgba(0,0,0,0.3)]"
           role="dialog"
           aria-modal="true"
           aria-labelledby="modal-headline"
         >
           {/* Header Image */}
-          <div className="relative h-52 w-full overflow-hidden bg-cream-200">
+          <div className="relative h-[185px] w-full flex-shrink-0 overflow-hidden bg-cream-200 sm:h-[195px]">
             <Image
               src={food.image}
+              unoptimized={food.image.startsWith("data:image/")}
               alt={food.name}
               fill
               className="object-cover"
               sizes="(max-width: 640px) 100vw, 500px"
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-charcoal-900/80 via-charcoal-900/20 to-transparent" />
+            <div className="absolute inset-0 bg-gradient-to-t from-[#10190e]/75 via-[#10190e]/10 to-transparent" />
 
             {/* Close Button */}
             <button
               type="button"
               onClick={onClose}
-              className="absolute top-4 right-4 flex h-9 w-9 items-center justify-center rounded-full bg-charcoal-900/70 text-white hover:bg-charcoal-900 transition-colors shadow-soft"
+              className="absolute right-3 top-3 flex h-9 w-9 items-center justify-center rounded-full bg-white text-charcoal-800 shadow-md transition-colors hover:bg-cream-100"
               aria-label="Close customizer"
             >
-              <X className="w-5 h-5" />
+              <X className="h-5 w-5" />
             </button>
 
             {/* Badges on Image */}
-            <div className="absolute top-4 left-4 flex items-center gap-2">
-              <div className="rounded-xl bg-white px-2.5 py-1 shadow-md">
-                <RestaurantBadge type={food.isVeg ? "veg" : "non-veg"} size="sm" />
+            <div className="absolute left-4 top-4 flex flex-wrap items-center gap-2">
+              <div className="inline-flex items-center gap-1.5 rounded-full bg-white/95 px-2.5 py-1.5 shadow-md">
+                {isVeg ? (
+                  <>
+                    <Leaf className="h-3.5 w-3.5 fill-[#248747] text-[#248747]" />
+                    <span className="text-[10px] font-extrabold uppercase tracking-wide text-[#176b36]">Pure Veg</span>
+                  </>
+                ) : (
+                  <>
+                    <Flame className="h-3.5 w-3.5 fill-[#c34232] text-[#c34232]" />
+                    <span className="text-[10px] font-extrabold uppercase tracking-wide text-[#9f3026]">Non-Veg</span>
+                  </>
+                )}
               </div>
               {food.isChefSpecial && (
-                <span className="flex items-center gap-1 rounded-xl bg-amber-500 px-2.5 py-1 text-[11px] font-bold text-white shadow-sm uppercase">
-                  <Flame className="w-3.5 h-3.5" /> Chef Special
+                <span className="flex items-center gap-1 rounded-full bg-[#f17823] px-2.5 py-1.5 text-[10px] font-bold uppercase text-white shadow-sm">
+                  <ChefHat className="h-3.5 w-3.5" /> Chef Special
                 </span>
               )}
             </div>
 
             {/* Title on bottom of image */}
-            <div className="absolute bottom-4 left-5 right-5 text-white">
+            <div className="absolute bottom-3 left-5 right-5 text-white">
               <h3
                 id="modal-headline"
-                className="font-display text-xl sm:text-2xl font-bold drop-shadow-sm"
+                className="font-display text-xl font-extrabold leading-tight drop-shadow-sm sm:text-2xl"
               >
                 {food.name}
               </h3>
-              <p className="text-xs text-white/80 line-clamp-1 mt-0.5">
+              <p className="mt-1 line-clamp-1 text-[11px] text-white/90">
                 {food.description}
               </p>
             </div>
           </div>
 
           {/* Modal Scrollable Content */}
-          <div className="max-h-[60vh] overflow-y-auto p-5 sm:p-6 space-y-6">
+          <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-4 py-3.5 sm:px-5">
             {/* Quick Metrics */}
-            <div className="flex items-center gap-4 text-xs text-charcoal-500 border-b border-cream-200 pb-4">
-              <span className="flex items-center gap-1">
-                <Clock className="w-3.5 h-3.5 text-primary-500" />
-                {food.preparationTime}
-              </span>
-              {food.calories && (
-                <span className="flex items-center gap-1">
-                  <Info className="w-3.5 h-3.5 text-primary-500" />
-                  {food.calories} kcal
+            <div className="flex rounded-2xl bg-[#f0f6e9] py-2.5 text-[11px] font-semibold text-charcoal-700">
+              {metrics.map(({ label, Icon, tone }, index) => (
+                <span
+                  key={label}
+                  className={cn(
+                    "flex min-w-0 flex-1 items-center justify-center gap-1.5 px-1 text-center",
+                    index > 0 && "border-l border-[#d6e4cc]"
+                  )}
+                >
+                  <Icon className={cn("h-4 w-4 flex-shrink-0", tone)} />
+                  <span className="truncate">{label}</span>
                 </span>
-              )}
-              {food.serves && <span>{food.serves}</span>}
+              ))}
             </div>
 
             {/* Section 1: Choose Variant (if available) */}
             {food.variants && food.variants.length > 0 && (
-              <div className="space-y-3">
+              <div className="space-y-2.5">
                 <div className="flex items-center justify-between">
-                  <h4 className="text-xs font-bold uppercase tracking-wider text-charcoal-900">
-                    1. Choose Portion Size / Variant
+                  <h4 className="text-sm font-bold text-[#174c31]">
+                    Choose Portion Size
                   </h4>
                   <span className="rounded-md bg-cream-100 px-2 py-0.5 text-[10px] font-bold text-charcoal-600 uppercase">
                     Required
@@ -174,12 +219,12 @@ export function FoodCustomizerModal({
                       <label
                         key={v.id}
                         className={cn(
-                          "flex items-center justify-between p-3 rounded-2xl border cursor-pointer transition-all",
+                          "flex cursor-pointer items-center justify-between rounded-xl border px-3 py-2.5 transition-all",
                           isSelected
                             ? isVeg
-                              ? "border-veg-600 bg-veg-50/70 shadow-sm"
-                              : "border-nonveg-700 bg-nonveg-50/70 shadow-sm"
-                            : "border-cream-300 hover:bg-cream-50"
+                              ? "border-[#27864b] bg-[#f1f7ed]"
+                              : "border-[#b83d32] bg-[#fcf1ed]"
+                            : "border-[#e8e7df] bg-white hover:bg-[#fafaf5]"
                         )}
                       >
                         <div className="flex items-center gap-3">
@@ -189,7 +234,7 @@ export function FoodCustomizerModal({
                             value={v.id}
                             checked={isSelected}
                             onChange={() => setSelectedVariant(v)}
-                            className="h-4 w-4 text-primary-600 focus:ring-primary-500"
+                            className={cn("h-4 w-4", isVeg ? "accent-[#218447]" : "accent-[#b83d32]")}
                           />
                           <div>
                             <p className="text-xs font-bold text-charcoal-900">
@@ -214,12 +259,13 @@ export function FoodCustomizerModal({
 
             {/* Section 2: Choose Add-ons & Extras (if available) */}
             {food.addons && food.addons.length > 0 && (
-              <div className="space-y-3">
+              <div className="space-y-2.5">
                 <div className="flex items-center justify-between">
-                  <h4 className="text-xs font-bold uppercase tracking-wider text-charcoal-900">
-                    2. Recommended Extras & Add-ons
+                  <h4 className="flex items-center gap-2 text-sm font-bold text-[#174c31]">
+                    <ShoppingBasket className="h-4 w-4 text-[#22814b]" />
+                    Recommended Extras &amp; Add-ons
                   </h4>
-                  <span className="text-[11px] text-charcoal-500">Optional</span>
+                  <span className="rounded-full bg-[#f0f6e9] px-2.5 py-1 text-[10px] font-semibold text-[#5b7e42]">Optional</span>
                 </div>
 
                 <div className="space-y-2">
@@ -229,24 +275,24 @@ export function FoodCustomizerModal({
                       <label
                         key={addon.id}
                         className={cn(
-                          "flex items-center justify-between p-3 rounded-2xl border cursor-pointer transition-all",
+                          "flex cursor-pointer items-center justify-between rounded-xl border px-3 py-2.5 transition-all",
                           isChecked
-                            ? "border-primary-500 bg-primary-50/50 shadow-sm"
-                            : "border-cream-300 hover:bg-cream-50"
+                            ? "border-[#27864b] bg-[#f1f7ed]"
+                            : "border-[#e8e7df] bg-white hover:bg-[#fafaf5]"
                         )}
                       >
-                        <div className="flex items-center gap-3">
+                        <div className="flex min-w-0 items-center gap-3">
                           <input
                             type="checkbox"
                             checked={isChecked}
                             onChange={() => handleToggleAddon(addon)}
-                            className="h-4 w-4 rounded text-primary-600 focus:ring-primary-500"
+                            className="h-4 w-4 flex-shrink-0 rounded accent-[#218447]"
                           />
-                          <span className="text-xs font-semibold text-charcoal-800">
+                          <span className="truncate text-xs font-semibold text-charcoal-800">
                             {addon.name}
                           </span>
                         </div>
-                        <span className="text-xs font-bold text-primary-600">
+                        <span className="ml-3 flex-shrink-0 text-xs font-bold text-[#e66d20]">
                           +{formatCurrency(addon.price)}
                         </span>
                       </label>
@@ -260,9 +306,10 @@ export function FoodCustomizerModal({
             <div className="space-y-2">
               <label
                 htmlFor={instructionsId}
-                className="block text-xs font-bold uppercase tracking-wider text-charcoal-900"
+                className="flex items-center gap-2 text-sm font-bold text-[#174c31]"
               >
-                3. Special Preparation Instructions
+                <Heart className="h-4 w-4 text-[#22814b]" />
+                Special Preparation Instructions
               </label>
               <textarea
                 id={instructionsId}
@@ -270,34 +317,34 @@ export function FoodCustomizerModal({
                 value={specialInstructions}
                 onChange={(e) => setSpecialInstructions(e.target.value)}
                 placeholder="e.g. Less spicy, extra crispy, do not add onions, extra green chutney..."
-                className="w-full rounded-2xl border border-cream-300 bg-cream-50/50 p-3 text-xs text-charcoal-800 placeholder:text-charcoal-400 focus:border-primary-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary-500/20"
+                className="w-full rounded-xl border border-[#d6e5d1] bg-white p-3 text-xs text-charcoal-800 placeholder:text-charcoal-400 focus:border-[#27864b] focus:outline-none focus:ring-2 focus:ring-[#27864b]/20"
               />
             </div>
           </div>
 
           {/* Modal Footer: Quantity & Confirm CTA */}
-          <div className="border-t border-cream-200 bg-cream-50/80 p-5 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="flex flex-shrink-0 items-center gap-3 border-t border-[#eee9df] bg-[#fffaf2] p-4 sm:gap-5 sm:px-5">
             {/* Quantity Selector */}
-            <div className="flex items-center gap-3 bg-white p-1 rounded-2xl border border-cream-300 shadow-sm w-full sm:w-auto justify-between sm:justify-start">
+            <div className="flex h-10 flex-shrink-0 items-center gap-2 rounded-full border border-[#d6e5d1] bg-white px-2 shadow-sm">
               <button
                 type="button"
                 onClick={() => setQuantity(Math.max(1, quantity - 1))}
                 disabled={quantity <= 1}
-                className="flex h-8 w-8 items-center justify-center rounded-xl text-charcoal-600 hover:bg-cream-200 disabled:opacity-40 transition-colors"
+                className="flex h-7 w-7 items-center justify-center rounded-full text-[#23834a] transition-colors hover:bg-[#f0f6e9] disabled:opacity-40"
                 aria-label="Decrease quantity"
               >
-                <Minus className="w-3.5 h-3.5" />
+                <Minus className="h-4 w-4" />
               </button>
-              <span className="w-8 text-center text-sm font-bold text-charcoal-900">
+              <span className="w-5 text-center text-sm font-bold text-charcoal-900">
                 {quantity}
               </span>
               <button
                 type="button"
                 onClick={() => setQuantity(quantity + 1)}
-                className="flex h-8 w-8 items-center justify-center rounded-xl text-charcoal-600 hover:bg-cream-200 transition-colors"
+                className="flex h-7 w-7 items-center justify-center rounded-full text-[#23834a] transition-colors hover:bg-[#f0f6e9]"
                 aria-label="Increase quantity"
               >
-                <Plus className="w-3.5 h-3.5" />
+                <Plus className="h-4 w-4" />
               </button>
             </div>
 
@@ -307,10 +354,15 @@ export function FoodCustomizerModal({
               variant={isVeg ? "veg" : "nonveg"}
               size="lg"
               onClick={handleConfirm}
-              className="w-full sm:flex-1 justify-between shadow-lift"
+              className={cn(
+                "h-11 min-w-0 flex-1 justify-between rounded-full px-4 shadow-[0_6px_14px_rgba(0,100,45,0.2)]",
+                isVeg
+                  ? "bg-gradient-to-r from-[#078d42] to-[#087332] hover:from-[#087a3b] hover:to-[#075d2a]"
+                  : "bg-gradient-to-r from-[#c44335] to-[#a52d25] hover:from-[#b4392d] hover:to-[#8e241e]"
+              )}
             >
-              <span>Add to Order</span>
-              <span className="font-bold">{formatCurrency(grandTotal)}</span>
+              <span className="min-w-0 truncate">Add to Order</span>
+              <span className="ml-2 flex-shrink-0 border-l border-white/25 pl-3 font-bold">{formatCurrency(grandTotal)}</span>
             </Button>
           </div>
         </div>
@@ -318,4 +370,3 @@ export function FoodCustomizerModal({
     </div>
   );
 }
-

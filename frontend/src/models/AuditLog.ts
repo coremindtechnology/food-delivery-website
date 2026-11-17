@@ -5,7 +5,7 @@ export interface IAuditLog extends Document {
   actorType: "admin" | "customer" | "system";
   actorId?: mongoose.Types.ObjectId;
   action: string;
-  entity: "Restaurant" | "MenuCategory" | "MenuItem" | "Order" | "Payment" | "Refund" | "Inventory" | "Admin";
+  entity: "Expense" | "Restaurant" | "MenuCategory" | "MenuItem" | "Order" | "Payment" | "Refund" | "Inventory" | "Admin" | "Customer";
   entityId?: mongoose.Types.ObjectId;
   previousState?: Record<string, unknown>;
   newState?: Record<string, unknown>;
@@ -30,7 +30,7 @@ const AuditLogSchema = new Schema<IAuditLog>(
     action: { type: String, required: true, index: true },
     entity: {
       type: String,
-      enum: ["Restaurant", "MenuCategory", "MenuItem", "Order", "Payment", "Refund", "Inventory", "Admin"],
+      enum: ["Expense", "Restaurant", "MenuCategory", "MenuItem", "Order", "Payment", "Refund", "Inventory", "Admin", "Customer"],
       required: true,
       index: true,
     },
@@ -55,4 +55,3 @@ AuditLogSchema.index({ restaurantId: 1, createdAt: -1 });
 
 export const AuditLog: Model<IAuditLog> =
   mongoose.models.AuditLog || mongoose.model<IAuditLog>("AuditLog", AuditLogSchema);
-

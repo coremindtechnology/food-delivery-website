@@ -4,6 +4,8 @@ import { MenuCategory } from "@/models/MenuCategory";
 import { UpdateCategorySchema } from "@/lib/validations/category";
 import { ObjectIdSchema } from "@/lib/validations/common";
 import { successResponse, errorResponse, handleApiError } from "@/lib/api-response";
+import { verifyAdminPermissions } from "@/lib/admin-auth";
+import { MenuItem } from "@/models/MenuItem";
 
 interface RouteParams {
   params: Promise<{ id: string }>;
@@ -57,12 +59,20 @@ export async function PATCH(req: NextRequest, { params }: RouteParams) {
     const body = await req.json();
     const validatedData = UpdateCategorySchema.parse(body);
 
-    // If updating slug, ensure uniqueness within the same restaurant
+    const currentCategory = await MenuCategory.findOne({ _id: id, isArchived: { $ne: true } });
+    if (!currentCategory) {
+      return errorResponse("Category not found", 404);
+    }
+    const authCheck = await verifyAdminPermissions(
+      ["super_admin", "restaurant_manager", "menu_manager", "veg_manager", "nonveg_manager"],
+      currentCategory.restaurantId.toString()
+    );
+    if (!authCheck.authorized) {
+      return errorResponse(authCheck.error || "Unauthorized", authCheck.statusCode || 403);
+    }
+
+    // If updating slug, ensure uniqueness within the same restaurant.
     if (validatedData.slug) {
-      const currentCategory = await MenuCategory.findById(id).lean();
-      if (!currentCategory) {
-        return errorResponse("Category not found", 404);
-      }
       const slugConflict = await MenuCategory.findOne({
         restaurantId: currentCategory.restaurantId,
         slug: validatedData.slug,
@@ -86,6 +96,13 @@ export async function PATCH(req: NextRequest, { params }: RouteParams) {
       return errorResponse("Category not found", 404);
     }
 
+    if (validatedData.slug && validatedData.slug !== currentCategory.slug) {
+      await MenuItem.updateMany(
+        { categoryId: currentCategory._id },
+        { $set: { categorySlug: validatedData.slug } }
+      );
+    }
+
     return successResponse(updated);
   } catch (err) {
     return handleApiError(err);
@@ -107,6 +124,29 @@ export async function DELETE(_req: NextRequest, { params }: RouteParams) {
       return errorResponse("Database connection unavailable. Please set MONGODB_URI.", 503);
     }
 
+    const category = await MenuCategory.findOne({ _id: id, isArchived: { $ne: true } });
+    if (!category) {
+      return errorResponse("Category not found or already archived", 404);
+    }
+    const authCheck = await verifyAdminPermissions(
+      ["super_admin", "restaurant_manager", "menu_manager", "veg_manager", "nonveg_manager"],
+      category.restaurantId.toString()
+    );
+    if (!authCheck.authorized) {
+      return errorResponse(authCheck.error || "Unauthorized", authCheck.statusCode || 403);
+    }
+
+    const activeItems = await MenuItem.countDocuments({
+      categoryId: category._id,
+      isArchived: { $ne: true },
+    });
+    if (activeItems > 0) {
+      return errorResponse(
+        "Move or archive this category's menu items before archiving the category.",
+        409
+      );
+    }
+
     const archived = await MenuCategory.findOneAndUpdate(
       { _id: id, isArchived: { $ne: true } },
       { $set: { isArchived: true } },
@@ -122,4 +162,3 @@ export async function DELETE(_req: NextRequest, { params }: RouteParams) {
     return handleApiError(err);
   }
 }
-
