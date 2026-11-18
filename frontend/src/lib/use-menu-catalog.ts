@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { CATEGORIES, SAMPLE_FOODS } from "@/data/foods";
 import { Category, FoodItem } from "@/types";
 
 type RestaurantSlug = "veg" | "non-veg";
@@ -46,10 +45,7 @@ interface ApiCategory {
 
 const initialCatalog: Catalog = {
   foods: [],
-  categories: CATEGORIES.map((category) => ({
-    ...category,
-    restaurantType: category.restaurantType === "both" ? "both" : "veg",
-  })),
+  categories: [],
   restaurantIds: {},
 };
 
@@ -61,11 +57,6 @@ export function useMenuCatalog(restaurant: RestaurantSlug | "all") {
   useEffect(() => {
     let active = true;
     const slugs: RestaurantSlug[] = restaurant === "all" ? ["veg", "non-veg"] : [restaurant];
-    const fallbackCategories = (slug: RestaurantSlug): CatalogCategory[] =>
-      CATEGORIES.map((category) => ({
-        ...category,
-        restaurantType: slug,
-      }));
 
     async function load() {
       const menus = await Promise.all(
@@ -116,10 +107,7 @@ export function useMenuCatalog(restaurant: RestaurantSlug | "all") {
               name: category.name,
               slug: category.slug,
               iconName: category.iconName || "Utensils",
-              image:
-                category.image ||
-                CATEGORIES.find((fallback) => fallback.slug === category.slug)?.image ||
-                CATEGORIES[0].image,
+              image: category.image || "",
               itemCount: foods.filter((food) => food.category === category.slug).length,
               restaurantType: slug,
               subcategories: category.subcategories?.map((subcategory) => ({
@@ -133,8 +121,8 @@ export function useMenuCatalog(restaurant: RestaurantSlug | "all") {
             return {
               slug,
               restaurantId: "",
-              foods: SAMPLE_FOODS.filter((food) => food.restaurantSlug === slug),
-              categories: fallbackCategories(slug),
+              foods: [],
+              categories: [],
               error: cause instanceof Error ? cause.message : `Unable to load the ${slug} menu.`,
             };
           }
@@ -151,7 +139,7 @@ export function useMenuCatalog(restaurant: RestaurantSlug | "all") {
       });
       setError(
         menus.some((menu) => menu.error)
-          ? `Live menu partially unavailable; sample data is shown where needed. ${menus
+          ? `Live menu unavailable. Add the restaurants, categories, and menu items in Admin. ${menus
               .filter((menu) => menu.error)
               .map((menu) => `${menu.slug}: ${menu.error}`)
               .join(" ")}`
