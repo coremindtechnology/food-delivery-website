@@ -22,11 +22,11 @@ export function Footer() {
 
       {/* Brand Story Banner */}
       <div className="relative z-20 px-4 pt-8 sm:px-6 lg:px-8">
-        <div className="relative mx-auto grid max-w-7xl items-center gap-5 overflow-hidden rounded-2xl border border-emerald-400/15 bg-[#063b2a] px-5 py-6 shadow-[0_16px_40px_rgba(0,0,0,0.28)] sm:grid-cols-[1fr_auto_auto] sm:gap-8 sm:px-8 sm:py-5">
+        <div className="relative mx-auto grid max-w-7xl items-center gap-5 overflow-hidden rounded-2xl border border-emerald-400/15 bg-[#063b2a] px-5 py-6 shadow-[0_16px_40px_rgba(0,0,0,0.28)] md:grid-cols-[1fr_auto_auto] md:gap-8 md:px-8 md:py-5">
           <FloatingLeaf size={48} rotation={-25} delay={0.4} duration={7} className="-bottom-3 left-[34%] opacity-70" />
           <FloatingLeaf size={42} rotation={28} delay={1.2} duration={6} className="-bottom-2 right-2 opacity-70" />
 
-          <div className="relative z-10 text-center sm:text-left">
+          <div className="relative z-10 text-center md:text-left">
             <p className="font-script text-3xl italic leading-tight text-white sm:text-4xl">
               Good Food
             </p>
@@ -53,7 +53,7 @@ export function Footer() {
 
           <Link
             href="/#about"
-            className="relative z-10 mx-auto inline-flex items-center gap-2 rounded-full border border-amber-300/30 bg-white/5 px-4 py-2 text-xs font-semibold text-white/90 transition-colors hover:border-amber-300/70 hover:bg-white/10 hover:text-amber-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300 focus-visible:ring-offset-2 focus-visible:ring-offset-[#063b2a] sm:mx-0"
+            className="relative z-10 mx-auto inline-flex items-center gap-2 rounded-full border border-amber-300/30 bg-white/5 px-4 py-2 text-xs font-semibold text-white/90 transition-colors hover:border-amber-300/70 hover:bg-white/10 hover:text-amber-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300 focus-visible:ring-offset-2 focus-visible:ring-offset-[#063b2a] md:mx-0"
           >
             <span className="flex h-8 w-8 items-center justify-center rounded-full bg-amber-400 text-emerald-950 transition-transform hover:scale-110">
               <Play className="ml-0.5 h-4 w-4 fill-current" />
@@ -206,7 +206,7 @@ export function Footer() {
         </div>
 
         {/* Bottom Policy & Legal Links */}
-        <div className="mt-12 pt-8 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-white/60">
+        <div className="mt-12 pt-8 border-t border-white/10 flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-white/60">
           <p>© {currentYear} Dual Kitchens Platform. All rights reserved.</p>
           <div className="flex flex-wrap items-center gap-6">
             <Link href="/privacy-policy" className="hover:text-white transition-colors">

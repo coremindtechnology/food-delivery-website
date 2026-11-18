@@ -37,24 +37,24 @@ export function Header() {
       {/* Main Navigation Header */}
       <header className="sticky top-0 z-40 w-full border-b border-[#ece7e1] bg-[#f7f4f1]/95 backdrop-blur-md transition-all shadow-[0_1px_0_rgba(17,18,21,0.08)]">
         <div className="max-w-[1280px] mx-auto px-2 sm:px-4 lg:px-6">
-          <div className="flex h-20 items-center justify-between gap-4">
+          <div className="flex h-16 items-center justify-between gap-2 sm:h-20 sm:gap-4">
             {/* Brand Logo */}
-            <Link href="/" className="flex items-center gap-3 group flex-shrink-0">
-              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-[#f78a2b] to-[#e55f22] text-white font-black text-xl shadow-[0_10px_20px_rgba(229,95,34,0.28)] group-hover:scale-105 transition-transform">
+            <Link href="/" className="flex min-w-0 shrink-0 items-center gap-2 group sm:gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-[#f78a2b] to-[#e55f22] text-white font-black text-lg shadow-[0_10px_20px_rgba(229,95,34,0.28)] transition-transform group-hover:scale-105 sm:h-11 sm:w-11 sm:text-xl">
                 DK
               </div>
-              <div className="flex flex-col leading-none">
-                <span className="font-display text-lg font-bold tracking-tight text-[#1f1d1a] group-hover:text-[#e55f22] transition-colors">
+              <div className="flex min-w-0 flex-col leading-none">
+                <span className="whitespace-nowrap font-display text-sm font-bold tracking-tight text-[#1f1d1a] transition-colors group-hover:text-[#e55f22] sm:text-lg">
                   Dual Kitchens
                 </span>
-                <span className="text-[10px] font-medium uppercase tracking-[0.16em] text-[#6f6a64] mt-1">
+                <span className="mt-1 hidden whitespace-nowrap text-[10px] font-medium uppercase tracking-[0.16em] text-[#6f6a64] sm:block">
                   Veg & Non-Veg Cloud Kitchens
                 </span>
               </div>
             </Link>
 
             {/* Middle Restaurant Quick Switcher & Nav Links */}
-            <nav className="hidden lg:flex items-center gap-1 bg-[#f0eee9] p-1 rounded-full border border-[#e7e1d8] shadow-[inset_0_1px_0_rgba(255,255,255,0.7)]">
+            <nav className="hidden xl:flex items-center gap-1 bg-[#f0eee9] p-1 rounded-full border border-[#e7e1d8] shadow-[inset_0_1px_0_rgba(255,255,255,0.7)]">
               <Link
                 href="/"
                 className={cn(
@@ -95,19 +95,20 @@ export function Header() {
             </nav>
 
             {/* Right Action Elements */}
-            <div className="flex items-center gap-2 sm:gap-2.5">
+            <div className="flex shrink-0 items-center gap-1 sm:gap-2.5">
               <Link
                 href="/track-order"
+                aria-label="Order tracking"
+                title="Order tracking"
                 className={cn(
-                  "inline-flex items-center gap-1.5 px-3 py-2 rounded-full text-[11px] font-bold transition-all border",
+                  "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-2 text-[11px] font-bold transition-all sm:px-3",
                   pathname === "/track-order"
                     ? "bg-[#0b3b24] text-white border-[#0b3b24] shadow-sm"
                     : "text-[#282c3f] border-[#e7e1d8] bg-white/70 hover:bg-white hover:text-[#0b3b24] hover:border-[#c5decb]"
                 )}
               >
                 <Truck className="w-3.5 h-3.5 text-[#0b512a]" />
-                <span className="hidden sm:inline">Order Tracking</span>
-                <span className="sm:hidden">Track</span>
+                <span className="hidden md:inline">Order Tracking</span>
               </Link>
 
               <Link
@@ -119,7 +120,7 @@ export function Header() {
               </Link>
 
               {isAuthenticated && customer ? (
-                <div className="relative">
+                <div className="relative hidden sm:block">
                   <button
                     type="button"
                     onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
@@ -171,7 +172,7 @@ export function Header() {
               <button
                 type="button"
                 onClick={() => setIsCartDrawerOpen(true)}
-                className="relative inline-flex items-center gap-2 px-3.5 py-2.5 rounded-full bg-gradient-to-r from-[#f39031] to-[#e55f22] hover:brightness-105 text-white font-bold text-[11px] shadow-[0_10px_20px_rgba(229,95,34,0.24)] transition-all active:scale-95"
+                className="relative inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-[#f39031] to-[#e55f22] px-2.5 py-2.5 text-[11px] font-bold text-white shadow-[0_10px_20px_rgba(229,95,34,0.24)] transition-all hover:brightness-105 active:scale-95 sm:px-3.5"
                 aria-label="View Cart"
               >
                 <ShoppingBag className="w-4 h-4" />
@@ -186,7 +187,7 @@ export function Header() {
               <button
                 type="button"
                 onClick={() => setIsMobileMenuOpen(true)}
-                className="lg:hidden rounded-full border border-[#e7e1d8] bg-white/60 p-2.5 text-[#1f1d1a] hover:bg-white focus:outline-none"
+                className="rounded-full border border-[#e7e1d8] bg-white/60 p-2 text-[#1f1d1a] hover:bg-white focus:outline-none sm:p-2.5 xl:hidden"
                 aria-label="Open mobile menu"
               >
                 <Menu className="w-5 h-5" />
