@@ -2,6 +2,7 @@
 
 import { ChangeEvent, FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
 
 type Restaurant = { _id: string; name: string; slug: string; type: string };
 type Category = {
@@ -432,7 +433,12 @@ export default function AdminMenuPage() {
 
       {error && <p role="alert" className="rounded-lg bg-red-50 p-3 text-red-800">{error}</p>}
       {message && <p role="status" className="rounded-lg bg-success-50 p-3 text-success-800">{message}</p>}
-      {!restaurants.length && <p className="rounded-lg bg-amber-50 p-4 text-amber-900">No restaurants are available to this admin account.</p>}
+      {!restaurants.length && (
+        <p className="rounded-lg bg-amber-50 p-4 text-amber-900">
+          No restaurants are available to this admin account. A super admin can add a kitchen in{" "}
+          <Link href="/admin/settings" className="font-bold underline">Settings</Link>.
+        </p>
+      )}
 
       <nav className="flex gap-2 border-b">
         {(["items", "categories", "inventory"] as const).map((value) => (

@@ -18,6 +18,7 @@ import {
   getAdminOrderNotificationsEnabled,
   setAdminOrderNotificationsEnabled,
 } from "@/lib/admin-notifications";
+import { CreateRestaurantForm, type AdminRestaurant } from "@/components/admin/CreateRestaurantForm";
 
 const STAFF_ROLES = [
   { value: "restaurant_manager", label: "Restaurant manager" },
@@ -59,24 +60,7 @@ const EMPTY_STAFF_FORM: StaffForm = {
   assignedRestaurantId: "",
 };
 
-type Restaurant = {
-  _id: string;
-  name: string;
-  slug: string;
-  type: string;
-  isOpen: boolean;
-  openingHours: string;
-  deliveryTime: string;
-  minOrderAmount: number;
-  bannerText?: string;
-  contactPhone: string;
-  address?: {
-    street: string;
-    city: string;
-    state: string;
-    pincode: string;
-  };
-};
+type Restaurant = AdminRestaurant;
 
 type SettingsForm = Pick<
   Restaurant,
@@ -360,6 +344,18 @@ export default function AdminSettingsPage() {
           </div>
         )}
 
+        {!loading && adminRole === "super_admin" && (
+          <CreateRestaurantForm
+            existingSlugs={restaurants.map((restaurant) => restaurant.slug)}
+            onCreated={(restaurant) => {
+              setRestaurants((current) => [...current, restaurant].sort((a, b) => a.name.localeCompare(b.name)));
+              setSelectedId(restaurant._id);
+              setForm(getSettings(restaurant));
+              setSaved(false);
+            }}
+          />
+        )}
+
         <section className="rounded-2xl border border-cream-200 bg-white p-4 shadow-sm sm:p-6">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div className="flex items-start gap-3">
@@ -409,7 +405,11 @@ export default function AdminSettingsPage() {
           <div className="rounded-2xl border border-cream-200 bg-white p-8 text-center">
             <Store className="mx-auto h-8 w-8 text-charcoal-400" />
             <h2 className="mt-3 font-bold text-charcoal-900">No kitchens available</h2>
-            <p className="mt-1 text-sm text-charcoal-600">There are no kitchens assigned to this admin account.</p>
+            <p className="mt-1 text-sm text-charcoal-600">
+              {adminRole === "super_admin"
+                ? "Create a restaurant above, then add its categories and menu items in Menu Management."
+                : "There are no kitchens assigned to this admin account."}
+            </p>
           </div>
         ) : form && selectedRestaurant ? (
           <form onSubmit={saveSettings} className="space-y-4">
