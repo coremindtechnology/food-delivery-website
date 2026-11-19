@@ -167,8 +167,8 @@ export default function HomePage() {
           className="bottom-28 left-[38%] hidden sm:block"
         />
 
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-20">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
+        <div className="mx-auto max-w-[1440px] px-4 sm:px-6 lg:px-8 relative z-20">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-center">
             {/* Left Column: Typography, Subtitle & Action Controls */}
             <div className="order-last space-y-2 text-left lg:order-first lg:col-span-6">
               {/* Cursive "Discover Our" */}
@@ -249,7 +249,7 @@ export default function HomePage() {
 
             {/* Right Column: Hero Food Image */}
             <div className="order-first relative flex items-center justify-center pt-0 lg:order-last lg:col-span-6">
-              <div className="relative mx-auto w-[min(68vw,280px)] aspect-square sm:w-[min(58vw,380px)] lg:w-full lg:max-w-[520px]">
+              <div className="relative mx-auto w-[min(68vw,280px)] aspect-square sm:w-[min(58vw,380px)] lg:w-full lg:max-w-[520px] xl:max-w-[620px]">
                 <div className="absolute inset-0 rounded-full bg-gradient-to-tr from-amber-500/10 via-red-500/10 to-transparent blur-3xl opacity-60" />
                 <div className="absolute inset-[8%] rounded-full bg-black/80 blur-2xl translate-y-6" />
                 <div className="relative z-10 h-full w-full">
