@@ -170,7 +170,7 @@ export default function HomePage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-20">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
             {/* Left Column: Typography, Subtitle & Action Controls */}
-            <div className="lg:col-span-6 space-y-2 text-left">
+            <div className="order-last space-y-2 text-left lg:order-first lg:col-span-6">
               {/* Cursive "Discover Our" */}
               <p className="font-script text-4xl sm:text-5xl lg:text-6xl text-[#e8903c] italic leading-tight tracking-wide select-none">
                 Discover Our
@@ -248,8 +248,8 @@ export default function HomePage() {
             </div>
 
             {/* Right Column: Hero Food Image */}
-            <div className="lg:col-span-6 flex items-center justify-center relative pt-4 lg:pt-0">
-              <div className="relative w-full max-w-[520px] aspect-square">
+            <div className="order-first relative flex items-center justify-center pt-0 lg:order-last lg:col-span-6">
+              <div className="relative mx-auto w-[min(68vw,280px)] aspect-square sm:w-[min(58vw,380px)] lg:w-full lg:max-w-[520px]">
                 <div className="absolute inset-0 rounded-full bg-gradient-to-tr from-amber-500/10 via-red-500/10 to-transparent blur-3xl opacity-60" />
                 <div className="absolute inset-[8%] rounded-full bg-black/80 blur-2xl translate-y-6" />
                 <div className="relative z-10 h-full w-full">
@@ -258,7 +258,7 @@ export default function HomePage() {
                     alt="Discover Our Delicious Food Menu"
                     fill
                     priority
-                    sizes="(max-width: 768px) 80vw, 520px"
+                    sizes="(max-width: 639px) 68vw, (max-width: 1023px) 58vw, 520px"
                     className="object-contain pointer-events-none select-none"
                   />
                 </div>
@@ -384,7 +384,7 @@ export default function HomePage() {
                     : "bg-white text-charcoal-900 shadow-sm ring-1 ring-black/5 hover:-translate-y-1 hover:bg-veg-800 hover:text-white hover:shadow-lg hover:shadow-veg-900/15 hover:ring-veg-800"
                 }`}
               >
-                <span className="relative block aspect-square w-full overflow-hidden rounded-xl">
+                <span className="relative mx-auto block aspect-square w-full max-w-[168px] overflow-hidden rounded-xl">
                   <Image
                     src={cat.image}
                     alt=""
