@@ -195,9 +195,9 @@ export default function HomePage() {
               <div>
                 <Link
                   href="#restaurants"
-                  className="rounded-full border border-white/60 hover:border-white text-white font-medium text-xs sm:text-sm px-7 py-3 transition-all duration-200 hover:bg-white/10 active:scale-95 inline-flex items-center gap-2 shadow-sm"
+                  className="rounded-full border border-white/60 hover:border-white text-white font-semibold text-sm sm:text-base px-8 py-3.5 sm:px-10 sm:py-4 transition-all duration-200 hover:bg-white/10 active:scale-95 inline-flex items-center justify-center gap-2.5 shadow-sm"
                 >
-                  <Check className="w-4 h-4 text-[#25c255]" />
+                  <Check className="w-5 h-5 text-[#25c255]" />
                   <span>Order Now</span>
                 </Link>
               </div>
@@ -207,7 +207,7 @@ export default function HomePage() {
                 <button
                   type="button"
                   onClick={() => setIsCartDrawerOpen(true)}
-                  className="w-10 h-10 rounded-full border border-white/60 hover:border-white text-white flex items-center justify-center transition-all duration-150 hover:bg-white/10 active:scale-90 relative"
+                  className="w-12 h-12 sm:w-14 sm:h-14 rounded-full border border-white/60 hover:border-white text-white flex items-center justify-center transition-all duration-150 hover:bg-white/10 active:scale-90 relative"
                   title="View cart"
                   aria-label="View cart"
                 >
@@ -221,7 +221,7 @@ export default function HomePage() {
 
                 <a
                   href="#food-menu"
-                  className="inline-flex items-center justify-center bg-[#e03b3b] hover:bg-[#c92a2a] text-white font-bold text-xs sm:text-sm px-7 py-2.5 rounded-full transition-all duration-200 shadow-lg shadow-red-900/40 active:scale-95 ml-1"
+                  className="inline-flex min-h-12 sm:min-h-14 items-center justify-center bg-[#e03b3b] hover:bg-[#c92a2a] text-white font-bold text-sm sm:text-base px-9 sm:px-11 rounded-full transition-all duration-200 shadow-lg shadow-red-900/40 active:scale-95 ml-1"
                 >
                   View More
                 </a>
