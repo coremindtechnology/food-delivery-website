@@ -191,19 +191,16 @@ export default function HomePage() {
                   Enjoy delicious dhaba-style food, freshly prepared with authentic spices and flavors.
               </p>
 
-              {/* Order Now Button */}
-              <div>
+              {/* Bottom Interactive Controls Bar */}
+              <div className="flex flex-wrap items-center gap-3 pt-6 sm:pt-10">
                 <Link
                   href="#restaurants"
-                  className="rounded-full border border-white/60 hover:border-white text-white font-semibold text-sm sm:text-base px-8 py-3.5 sm:px-10 sm:py-4 transition-all duration-200 hover:bg-white/10 active:scale-95 inline-flex items-center justify-center gap-2.5 shadow-sm"
+                  className="rounded-full border border-white/60 hover:border-white text-white font-semibold text-sm sm:text-base px-7 py-3.5 sm:px-9 sm:py-4 transition-all duration-200 hover:bg-white/10 active:scale-95 inline-flex items-center justify-center gap-2.5 shadow-sm"
                 >
                   <Check className="w-5 h-5 text-[#25c255]" />
                   <span>Order Now</span>
                 </Link>
-              </div>
 
-              {/* Bottom Interactive Controls Bar */}
-              <div className="flex items-center gap-3 pt-6 sm:pt-10">
                 <button
                   type="button"
                   onClick={() => setIsCartDrawerOpen(true)}
