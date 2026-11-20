@@ -49,11 +49,7 @@ export async function POST(req: NextRequest) {
     }
 
     const admin = await AdminUser.findById(challenge.adminId);
-    if (
-      !admin ||
-      !admin.isActive ||
-      (admin.temporaryAccessExpiresAt && admin.temporaryAccessExpiresAt <= new Date())
-    ) {
+    if (!admin || !admin.isActive) {
       return errorResponse("Account inactive or not found.", 403);
     }
 

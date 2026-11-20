@@ -32,11 +32,7 @@ export async function POST(req: NextRequest) {
 
     // 1. Find Admin User
     const admin = await AdminUser.findOne({ email: email.toLowerCase() });
-    if (
-      !admin ||
-      !admin.isActive ||
-      (admin.temporaryAccessExpiresAt && admin.temporaryAccessExpiresAt <= new Date())
-    ) {
+    if (!admin || !admin.isActive) {
       // Dummy check to prevent email enumeration timing attacks
       await verifyPassword("dummy", "scrypt$16384$8$1$00$00");
       return errorResponse("Invalid email or password", 401);

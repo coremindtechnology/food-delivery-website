@@ -26,7 +26,6 @@ export interface IAdminUser extends Document {
   totpRecoveryCodes?: string[];
   failedLoginAttempts: number;
   lockedUntil?: Date;
-  temporaryAccessExpiresAt?: Date;
   isActive: boolean;
   lastLoginAt?: Date;
   createdAt: Date;
@@ -80,7 +79,6 @@ const AdminUserSchema = new Schema<IAdminUser>(
     totpRecoveryCodes: [{ type: String }],
     failedLoginAttempts: { type: Number, default: 0 },
     lockedUntil: { type: Date },
-    temporaryAccessExpiresAt: { type: Date },
     isActive: { type: Boolean, default: true },
     lastLoginAt: { type: Date },
   },
