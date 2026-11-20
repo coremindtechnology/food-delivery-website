@@ -32,6 +32,15 @@ type AdminProfile = {
   role: string;
 };
 
+type AdminNotificationOrder = {
+  _id: string;
+  orderNumber: string;
+  customerName?: string;
+  totalAmount: number;
+  placedAt: string;
+  restaurantId?: string | { name: string };
+};
+
 const ADMIN_SECTIONS = [
   { href: "/admin", label: "Dashboard", Icon: LayoutDashboard },
   { href: "/admin/orders", label: "Orders", Icon: ClipboardList },
@@ -77,6 +86,10 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
   const [authError, setAuthError] = useState("");
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [notificationOrders, setNotificationOrders] = useState<AdminNotificationOrder[]>([]);
+  const [notificationsLoading, setNotificationsLoading] = useState(false);
+  const [notificationsError, setNotificationsError] = useState("");
 
   const checkSession = useCallback(async () => {
     if (isLoginPage) {
@@ -110,7 +123,25 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     setMobileNavOpen(false);
+    setNotificationsOpen(false);
   }, [pathname]);
+
+  const loadNotifications = useCallback(async () => {
+    setNotificationsLoading(true);
+    setNotificationsError("");
+    try {
+      const response = await fetch("/api/admin/orders?status=new&limit=5", { cache: "no-store" });
+      const result = await response.json();
+      if (!response.ok || !result.success || !Array.isArray(result.data)) {
+        throw new Error(result.error || "Unable to load new order notifications.");
+      }
+      setNotificationOrders(result.data as AdminNotificationOrder[]);
+    } catch (error) {
+      setNotificationsError(error instanceof Error ? error.message : "Unable to load new order notifications.");
+    } finally {
+      setNotificationsLoading(false);
+    }
+  }, []);
 
   async function handleLogout() {
     setLoggingOut(true);
@@ -162,6 +193,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
     day: "numeric",
     month: "short",
     year: "numeric",
+    timeZone: "Asia/Kolkata",
   }).format(new Date());
 
   return (
@@ -247,10 +279,93 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
               {currentDate}
               <ChevronDown className="h-3 w-3 text-charcoal-400" />
             </div>
-            <button type="button" aria-label="Notifications" title="No new notifications" className="relative rounded-lg p-2 text-charcoal-600 hover:bg-cream-100">
-              <Bell className="h-[18px] w-[18px]" />
-              <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full border border-white bg-red-500" />
-            </button>
+            <div className="relative">
+              <button
+                type="button"
+                aria-label="Notifications"
+                aria-expanded={notificationsOpen}
+                aria-controls="admin-notifications-panel"
+                title="Notifications"
+                onClick={() => {
+                  const open = !notificationsOpen;
+                  setNotificationsOpen(open);
+                  if (open) void loadNotifications();
+                }}
+                className="relative rounded-lg p-2 text-charcoal-600 hover:bg-cream-100"
+              >
+                <Bell className="h-[18px] w-[18px]" />
+                {notificationOrders.length > 0 && (
+                  <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full border border-white bg-red-500" />
+                )}
+              </button>
+              {notificationsOpen && (
+                <section
+                  id="admin-notifications-panel"
+                  aria-label="New order notifications"
+                  className="absolute right-0 top-full z-50 mt-2 w-80 max-w-[calc(100vw-2rem)] overflow-hidden rounded-xl border border-cream-200 bg-white shadow-xl"
+                >
+                  <div className="flex items-center justify-between border-b border-cream-100 px-4 py-3">
+                    <div>
+                      <h2 className="text-sm font-extrabold text-charcoal-900">Notifications</h2>
+                      <p className="text-[10px] text-charcoal-500">New orders</p>
+                    </div>
+                    <button
+                      type="button"
+                      aria-label="Close notifications"
+                      onClick={() => setNotificationsOpen(false)}
+                      className="rounded-md px-2 py-1 text-xs font-semibold text-charcoal-600 hover:bg-cream-100"
+                    >
+                      Close
+                    </button>
+                  </div>
+                  {notificationsLoading ? (
+                    <p className="px-4 py-6 text-center text-xs text-charcoal-500">Loading notifications…</p>
+                  ) : notificationsError ? (
+                    <div role="alert" className="space-y-2 px-4 py-4 text-xs text-red-700">
+                      <p>{notificationsError}</p>
+                      <button type="button" onClick={() => void loadNotifications()} className="font-bold underline">Retry</button>
+                    </div>
+                  ) : notificationOrders.length ? (
+                    <ul className="max-h-80 divide-y divide-cream-100 overflow-y-auto">
+                      {notificationOrders.map((order) => (
+                        <li key={order._id}>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setNotificationsOpen(false);
+                              router.push("/admin/orders");
+                            }}
+                            className="w-full px-4 py-3 text-left hover:bg-cream-50"
+                          >
+                            <span className="flex items-center justify-between gap-3">
+                              <span className="text-xs font-bold text-charcoal-900">New order #{order.orderNumber}</span>
+                              <span className="shrink-0 text-[10px] font-bold text-success-700">₹{Number(order.totalAmount || 0).toLocaleString("en-IN")}</span>
+                            </span>
+                            <span className="mt-1 block truncate text-[10px] text-charcoal-600">{order.customerName || "Customer"}</span>
+                            <span className="mt-1 block text-[9px] text-charcoal-500">
+                              {new Intl.DateTimeFormat("en-IN", {
+                                dateStyle: "medium",
+                                timeStyle: "short",
+                                timeZone: "Asia/Kolkata",
+                              }).format(new Date(order.placedAt))}
+                            </span>
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="px-4 py-6 text-center text-xs text-charcoal-500">No new orders.</p>
+                  )}
+                  <Link
+                    href="/admin/orders"
+                    onClick={() => setNotificationsOpen(false)}
+                    className="block border-t border-cream-100 px-4 py-3 text-center text-xs font-bold text-success-700 hover:bg-cream-50"
+                  >
+                    View all orders
+                  </Link>
+                </section>
+              )}
+            </div>
             <div className="hidden h-7 border-l border-cream-200 sm:block" />
             <div className="flex items-center gap-2">
               <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#ff7900] text-[10px] font-black text-white">

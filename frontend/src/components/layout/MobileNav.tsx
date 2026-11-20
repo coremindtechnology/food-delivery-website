@@ -41,8 +41,8 @@ export function MobileNav({ isOpen, onClose }: MobileNavProps) {
       />
 
       {/* Drawer */}
-      <div className="fixed inset-y-0 right-0 w-full max-w-xs bg-cream-50 p-6 shadow-2xl flex flex-col justify-between border-l border-cream-300">
-        <div className="space-y-6">
+      <div className="fixed inset-y-0 right-0 flex w-[calc(100%-24px)] max-w-[360px] flex-col justify-between overflow-y-auto border-l border-cream-300 bg-cream-50 p-4 sm:p-5 shadow-2xl">
+        <div className="space-y-4 sm:space-y-5">
           {/* Top Bar */}
           <div className="flex items-center justify-between border-b border-cream-200 pb-4">
             <div className="flex items-center gap-2">
@@ -100,7 +100,7 @@ export function MobileNav({ isOpen, onClose }: MobileNavProps) {
           </div>
 
           {/* Links */}
-          <nav className="space-y-1">
+          <nav className="space-y-1.5">
             {/* Mobile Cart Button */}
             <button
               type="button"
@@ -165,23 +165,23 @@ export function MobileNav({ isOpen, onClose }: MobileNavProps) {
                   href={link.href}
                   onClick={onClose}
                   className={cn(
-                    "flex items-center justify-between rounded-xl px-4 py-3 text-sm font-medium transition-colors",
+                    "flex min-h-12 items-center justify-between gap-2 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors",
                     isActive
                       ? "bg-primary-500 text-white font-semibold shadow-soft"
                       : "text-charcoal-700 hover:bg-cream-200 hover:text-charcoal-900"
                   )}
                 >
-                  <div className="flex items-center gap-3">
+                  <div className="flex min-w-0 flex-1 items-center gap-2.5">
                     {Icon && <Icon className="w-4 h-4 opacity-80" />}
                     {link.badge && (
                       <RestaurantBadge type={link.badge} size="sm" showLabel={false} />
                     )}
-                    <span>{link.label}</span>
+                    <span className="min-w-0 leading-snug">{link.label}</span>
                   </div>
                   {link.badge && (
                     <span
                       className={cn(
-                        "text-[10px] uppercase font-bold px-2 py-0.5 rounded-full",
+                        "shrink-0 whitespace-nowrap rounded-full px-2 py-1 text-[9px] font-bold uppercase",
                         isActive
                           ? "bg-white/20 text-white"
                           : link.badge === "veg"
@@ -189,7 +189,7 @@ export function MobileNav({ isOpen, onClose }: MobileNavProps) {
                           : "bg-nonveg-100 text-nonveg-700"
                       )}
                     >
-                      {link.badge === "veg" ? "Pure Veg" : "Meat & Grill"}
+                      {link.badge === "veg" ? "PURE VEG" : "MEAT"}
                     </span>
                   )}
                 </Link>

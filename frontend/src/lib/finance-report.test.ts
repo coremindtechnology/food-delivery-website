@@ -9,6 +9,17 @@ import {
   type FinancePayment,
   type FinanceRefund,
 } from "./finance-report";
+import { getIndiaDateBounds, getIndiaDateKey } from "./india-time";
+
+test("dashboard date bounds use India local days and reject invalid calendar dates", () => {
+  const bounds = getIndiaDateBounds("2026-01-01");
+  assert.equal(bounds?.start.toISOString(), "2025-12-31T18:30:00.000Z");
+  assert.equal(bounds?.end.toISOString(), "2026-01-01T18:30:00.000Z");
+  assert.equal(getIndiaDateBounds("2026-02-30"), null);
+  assert.equal(getIndiaDateBounds("2026/01/01"), null);
+  assert.equal(getIndiaDateKey(new Date("2026-01-01T18:29:59.999Z")), "2026-01-01");
+  assert.equal(getIndiaDateKey(new Date("2026-01-01T18:30:00.000Z")), "2026-01-02");
+});
 
 const range = resolveFinanceDateRange("custom", {
   startDate: "2026-01-01",

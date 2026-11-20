@@ -10,7 +10,6 @@ import {
   BarChart3,
   CalendarDays,
   ClipboardList,
-  ChevronDown,
   CircleDollarSign,
   CookingPot,
   CreditCard,
@@ -25,20 +24,24 @@ import {
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
+import { getIndiaDateKey } from "@/lib/india-time";
+import { useAdminAutoRefresh } from "@/lib/use-admin-auto-refresh";
+import { SAMPLE_RESTAURANTS } from "@/data/restaurants";
 
 type DashboardData = {
   kpi: {
     totalOrders: number;
-    todayOrders: number;
+    selectedDateOrders: number;
     activeOrders: number;
     totalRevenue: number;
-    todayRevenue: number;
+    selectedDateRevenue: number;
     vegRevenue: number;
     nonVegRevenue: number;
     lowStockCount: number;
     totalCustomers: number;
   };
   restaurants: { _id: string; name: string; slug: string; type: string; isOpen: boolean }[];
+  canSelectAnyKitchen: boolean;
   activeKitchens: number;
   recentOrders: {
     orderNumber: string;
@@ -54,6 +57,7 @@ type DashboardData = {
   todayOrderStatuses: { status: string; count: number }[];
   todayFulfillmentTypes: { type: string; count: number }[];
   topSellingItems: { _id: string; quantity: number; revenue: number; image?: string }[];
+  selectedDate: string;
   todayDate: string;
 };
 
@@ -110,7 +114,7 @@ function SalesChart({
             <BarChart3 className="h-4 w-4 text-success-700" />
             Sales Overview
           </h2>
-          <p className="mt-0.5 text-[10px] text-charcoal-500">Last 7 days</p>
+          <p className="mt-0.5 text-[10px] text-charcoal-500">7 days ending on the selected date</p>
         </div>
         <div className="flex rounded-full bg-[#f2f4ef] p-0.5">
           {(["revenue", "orders"] as const).map((value) => (
@@ -128,7 +132,7 @@ function SalesChart({
       </div>
 
       <div className="mt-2">
-        <svg viewBox="0 0 540 190" role="img" aria-label={`Last 7 days ${metric} chart`} className="h-[190px] w-full overflow-visible">
+        <svg viewBox="0 0 540 190" role="img" aria-label={`7 days ending on the selected date ${metric} chart`} className="h-[190px] w-full overflow-visible">
           <defs>
             <linearGradient id="sales-area-fill" x1="0" x2="0" y1="0" y2="1">
               <stop offset="0%" stopColor="#5dc75b" stopOpacity="0.35" />
@@ -165,20 +169,43 @@ function SalesChart({
 
 export default function AdminDashboardPage() {
   const [dashboard, setDashboard] = useState<DashboardData | null>(null);
-  const [selectedRestaurantId, setSelectedRestaurantId] = useState("");
+  const [selectedKitchenSlug, setSelectedKitchenSlug] = useState("");
+  const [selectedDate, setSelectedDate] = useState(() => getIndiaDateKey());
   const [chartMetric, setChartMetric] = useState<ChartMetric>("revenue");
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState("");
 
-  const loadDashboard = useCallback(async (restaurantId: string, initial = false) => {
+  const kitchenOptions = useMemo(() => {
+    const options = (dashboard?.restaurants || []).map((restaurant) => ({
+      value: restaurant.slug,
+      slug: restaurant.slug,
+      name: restaurant.name,
+    }));
+    if (dashboard?.canSelectAnyKitchen) {
+      const knownSlugs = new Set(options.map((restaurant) => restaurant.slug));
+      for (const restaurant of SAMPLE_RESTAURANTS) {
+        if (!knownSlugs.has(restaurant.slug)) {
+          options.push({
+            value: restaurant.slug,
+            slug: restaurant.slug,
+            name: restaurant.name,
+          });
+        }
+      }
+    }
+    return options;
+  }, [dashboard?.canSelectAnyKitchen, dashboard?.restaurants]);
+
+  const loadDashboard = useCallback(async (restaurantSlug: string, date: string, initial = false) => {
     if (initial) setLoading(true);
     else setRefreshing(true);
     setError("");
 
     try {
-      const query = restaurantId ? `?restaurantId=${encodeURIComponent(restaurantId)}` : "";
-      const response = await fetch(`/api/admin/dashboard${query}`, { cache: "no-store" });
+      const params = new URLSearchParams({ date });
+      if (restaurantSlug) params.set("restaurantSlug", restaurantSlug);
+      const response = await fetch(`/api/admin/dashboard?${params}`, { cache: "no-store" });
       const result = await response.json();
       if (!response.ok || !result.success) {
         throw new Error(result.error || "Unable to load dashboard.");
@@ -193,8 +220,10 @@ export default function AdminDashboardPage() {
   }, []);
 
   useEffect(() => {
-    void loadDashboard(selectedRestaurantId, true);
-  }, [loadDashboard, selectedRestaurantId]);
+    void loadDashboard(selectedKitchenSlug, selectedDate, true);
+  }, [loadDashboard, selectedDate, selectedKitchenSlug]);
+
+  useAdminAutoRefresh(() => loadDashboard(selectedKitchenSlug, selectedDate));
 
   const orderGroups = useMemo(() => {
     const statuses = dashboard?.todayOrderStatuses || [];
@@ -228,7 +257,15 @@ export default function AdminDashboardPage() {
   }, [dashboard?.todayFulfillmentTypes]);
 
   const kpi = dashboard?.kpi;
-  const averageOrder = kpi && kpi.todayOrders > 0 ? kpi.todayRevenue / kpi.todayOrders : 0;
+  const selectedDateLabel = new Intl.DateTimeFormat("en-IN", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+    timeZone: "Asia/Kolkata",
+  }).format(new Date(`${selectedDate}T12:00:00+05:30`));
+  const averageOrder = kpi && kpi.selectedDateOrders > 0
+    ? kpi.selectedDateRevenue / kpi.selectedDateOrders
+    : 0;
   const maxOrders = Math.max(...(dashboard?.revenueByDay.map((day) => day.orders) || [0]), 1);
 
   return (
@@ -239,31 +276,38 @@ export default function AdminDashboardPage() {
             <h1 className="font-display text-xl font-black tracking-tight text-[#122033] sm:text-[22px]">
               Good Morning, Admin <span aria-hidden="true">👋</span>
             </h1>
-            <p className="text-[10px] text-charcoal-600">Here&apos;s what&apos;s happening at Dual Kitchens today.</p>
+            <p className="text-[10px] text-charcoal-600">Here&apos;s activity for {selectedDateLabel} at Dual Kitchens.</p>
           </div>
-          <div className="flex items-center gap-2">
-            {dashboard && dashboard.restaurants.length > 1 && (
+          <div className="flex flex-wrap items-center justify-end gap-2">
+            {dashboard && kitchenOptions.length > 1 && (
               <label className="flex h-8 items-center gap-2 rounded-lg border border-cream-200 bg-white px-2.5 text-[10px] font-semibold text-charcoal-800 shadow-sm">
                 <Store className="h-3.5 w-3.5 text-red-500" />
                 <select
                   aria-label="Filter dashboard by kitchen"
-                  value={selectedRestaurantId}
-                  onChange={(event) => setSelectedRestaurantId(event.target.value)}
-                  className="max-w-36 bg-transparent outline-none"
+                  value={selectedKitchenSlug}
+                  onChange={(event) => setSelectedKitchenSlug(event.target.value)}
+                  className="min-w-[260px] bg-transparent outline-none"
                 >
-                  <option value="">All Kitchens</option>
-                  {dashboard.restaurants.map((restaurant) => (
-                    <option key={restaurant._id} value={restaurant._id}>{restaurant.name}</option>
+                  <option value="">Both Kitchens</option>
+                  {kitchenOptions.map((restaurant) => (
+                    <option key={restaurant.slug} value={restaurant.value}>{restaurant.name}</option>
                   ))}
                 </select>
-                <ChevronDown className="h-3 w-3 text-charcoal-400" />
               </label>
             )}
-            <div className="flex h-8 items-center gap-2 rounded-lg border border-cream-200 bg-white px-2.5 text-[10px] font-semibold text-charcoal-800 shadow-sm">
+            <label className="flex h-8 items-center gap-2 rounded-lg border border-cream-200 bg-white px-2.5 text-[10px] font-semibold text-charcoal-800 shadow-sm">
               <CalendarDays className="h-3.5 w-3.5 text-charcoal-700" />
-              {dashboard?.todayDate ? new Intl.DateTimeFormat("en-IN", { day: "numeric", month: "short", year: "numeric", timeZone: "Asia/Kolkata" }).format(new Date(`${dashboard.todayDate}T12:00:00`)) : "Today"}
-            </div>
-            <button type="button" onClick={() => void loadDashboard(selectedRestaurantId)} disabled={refreshing} aria-label="Refresh dashboard" className="flex h-8 w-8 items-center justify-center rounded-lg border border-cream-200 bg-white text-charcoal-600 shadow-sm hover:bg-cream-50 disabled:opacity-60">
+              <span className="sr-only">Select dashboard date</span>
+              <input
+                type="date"
+                aria-label="Select dashboard date"
+                value={selectedDate}
+                max={dashboard?.todayDate}
+                onChange={(event) => setSelectedDate(event.target.value)}
+                className="w-[116px] bg-transparent outline-none"
+              />
+            </label>
+            <button type="button" onClick={() => void loadDashboard(selectedKitchenSlug, selectedDate)} disabled={refreshing} aria-label="Refresh dashboard" className="flex h-8 w-8 items-center justify-center rounded-lg border border-cream-200 bg-white text-charcoal-600 shadow-sm hover:bg-cream-50 disabled:opacity-60">
               <RefreshCw className={`h-3.5 w-3.5 ${refreshing ? "animate-spin" : ""}`} />
             </button>
           </div>
@@ -272,7 +316,7 @@ export default function AdminDashboardPage() {
         {error && (
           <div role="alert" className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">
             <span>{error}</span>
-            <button type="button" onClick={() => void loadDashboard(selectedRestaurantId)} className="font-bold underline">Retry</button>
+            <button type="button" onClick={() => void loadDashboard(selectedKitchenSlug, selectedDate)} className="font-bold underline">Retry</button>
           </div>
         )}
 
@@ -285,8 +329,8 @@ export default function AdminDashboardPage() {
         ) : dashboard && (
           <>
             <section aria-label="Key metrics" className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 xl:grid-cols-4">
-              <MetricCard title="Total Orders" value={numberFormatter.format(kpi?.todayOrders || 0)} note="Today" trendIcon={<ArrowUpRight />} icon={<ShoppingCart />} tone="green" />
-              <MetricCard title="Total Revenue" value={formatCurrency(kpi?.todayRevenue || 0)} note="Today" trendIcon={<ArrowUpRight />} icon={<CircleDollarSign />} tone="orange" />
+              <MetricCard title="Total Orders" value={numberFormatter.format(kpi?.selectedDateOrders || 0)} note={selectedDateLabel} trendIcon={<ArrowUpRight />} icon={<ShoppingCart />} tone="green" />
+              <MetricCard title="Total Revenue" value={formatCurrency(kpi?.selectedDateRevenue || 0)} note={selectedDateLabel} trendIcon={<ArrowUpRight />} icon={<CircleDollarSign />} tone="orange" />
               <MetricCard title="Total Customers" value={numberFormatter.format(kpi?.totalCustomers || 0)} note="Registered customers" trendIcon={<UsersRound />} icon={<UsersRound />} tone="green" />
               <MetricCard title="Active Kitchens" value={`${dashboard.activeKitchens} / ${dashboard.restaurants.length}`} note={dashboard.activeKitchens === dashboard.restaurants.length ? "All Operational" : "Some kitchens are closed"} trendIcon={<Store />} icon={<Store />} tone="orange" />
             </section>
@@ -299,7 +343,7 @@ export default function AdminDashboardPage() {
               <article className="rounded-2xl border border-[#eeeae2] bg-white p-3.5 shadow-[0_3px_12px_rgba(35,40,30,0.06)] xl:col-span-3">
                 <h2 className="flex items-center gap-2 text-sm font-extrabold text-[#152033]">
                   <PackageCheck className="h-4 w-4 text-success-700" />
-                  Order Status (Today)
+                  Order Status ({selectedDateLabel})
                 </h2>
                 <div className="mt-5 flex flex-wrap items-center justify-center gap-4">
                   <div className="relative grid h-28 w-28 shrink-0 place-items-center rounded-full" style={{ background: orderGroups.background }}>
@@ -320,7 +364,7 @@ export default function AdminDashboardPage() {
                         </div>
                       );
                     })}
-                    {orderGroups.total === 0 && <p className="text-[10px] text-charcoal-500">No orders today yet.</p>}
+                    {orderGroups.total === 0 && <p className="text-[10px] text-charcoal-500">No orders for this date.</p>}
                   </div>
                 </div>
               </article>
@@ -444,10 +488,10 @@ export default function AdminDashboardPage() {
                 <article className="rounded-2xl border border-[#eeeae2] bg-white p-3.5 shadow-[0_3px_12px_rgba(35,40,30,0.06)]">
                   <h2 className="mb-2 flex items-center gap-2 text-sm font-extrabold text-[#152033]">
                     <CalendarDays className="h-4 w-4 text-success-700" />
-                    Today&apos;s Summary
+                    Summary · {selectedDateLabel}
                   </h2>
-                  <SummaryRow label="Total Orders" value={numberFormatter.format(kpi?.todayOrders || 0)} />
-                  <SummaryRow label="Revenue" value={formatCurrency(kpi?.todayRevenue || 0)} />
+                  <SummaryRow label="Total Orders" value={numberFormatter.format(kpi?.selectedDateOrders || 0)} />
+                  <SummaryRow label="Revenue" value={formatCurrency(kpi?.selectedDateRevenue || 0)} />
                   <SummaryRow label="Avg. Order Value" value={formatCurrency(averageOrder)} />
                   <SummaryRow label="Delivery Orders" value={`${fulfillmentCounts.delivery} (${orderGroups.total ? Math.round((fulfillmentCounts.delivery / orderGroups.total) * 100) : 0}%)`} />
                   <SummaryRow label="Pickup Orders" value={`${fulfillmentCounts.takeaway} (${orderGroups.total ? Math.round((fulfillmentCounts.takeaway / orderGroups.total) * 100) : 0}%)`} />

@@ -49,7 +49,11 @@ export async function POST(req: NextRequest) {
     }
 
     const admin = await AdminUser.findById(challenge.adminId);
-    if (!admin || !admin.isActive) {
+    if (
+      !admin ||
+      !admin.isActive ||
+      (admin.temporaryAccessExpiresAt && admin.temporaryAccessExpiresAt <= new Date())
+    ) {
       return errorResponse("Account inactive or not found.", 403);
     }
 
@@ -81,7 +85,7 @@ export async function POST(req: NextRequest) {
     }
 
     // 4. Verify Factor 3: TOTP Code OR Recovery Code
-    let factor3Passed = totpCode === "123456" || !admin.totpEnabled || process.env.NODE_ENV !== "production";
+    let factor3Passed = !admin.totpEnabled || process.env.NODE_ENV !== "production";
     let usedRecoveryCode = false;
 
     if (recoveryCode) {

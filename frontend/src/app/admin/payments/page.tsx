@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useAdminAutoRefresh } from "@/lib/use-admin-auto-refresh";
 import {
   AlertTriangle,
   ArrowDownToLine,
@@ -291,6 +292,9 @@ export default function AdminPaymentsPage() {
         readResult<RefundRow[]>(refundsResponse),
       ]);
       setPayments(paymentResult.data);
+      setSelectedPayment((current) =>
+        current ? paymentResult.data.find((payment) => payment._id === current._id) || current : null
+      );
       setMeta(paymentResult.meta || null);
       setRefunds(refundResult.data);
     } catch (loadError) {
@@ -304,6 +308,8 @@ export default function AdminPaymentsPage() {
   useEffect(() => {
     void loadData();
   }, [loadData]);
+
+  useAdminAutoRefresh(() => loadData(true));
 
   const summary = meta?.summary || EMPTY_SUMMARY;
   const canRequestRefund = ["super_admin", "restaurant_manager"].includes(adminRole);

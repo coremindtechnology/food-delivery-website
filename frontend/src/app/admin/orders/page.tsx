@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import type { ReactNode } from "react";
+import { useAdminAutoRefresh } from "@/lib/use-admin-auto-refresh";
 import {
   ArrowDownToLine,
   CheckCircle2,
@@ -253,8 +254,8 @@ export default function AdminOrdersPage() {
     [debouncedSearch, fulfillmentFilter, fromDate, paymentFilter, restaurantFilter, statusFilter, toDate]
   );
 
-  const loadData = useCallback(async () => {
-    setLoading(true);
+  const loadData = useCallback(async (background = false) => {
+    if (!background) setLoading(true);
     try {
       const [ordersResponse, deliveryResponse, restaurantsResponse] = await Promise.all([
         fetch(`/api/admin/orders?${buildQuery(page)}`, { cache: "no-store" }),
@@ -271,6 +272,9 @@ export default function AdminOrdersPage() {
       }
 
       setOrders(ordersData.data as AdminOrder[]);
+      setSelectedOrder((current) =>
+        current ? (ordersData.data as AdminOrder[]).find((order) => order._id === current._id) || current : null
+      );
       setMeta(ordersData.meta as OrdersMeta);
       setSummary(ordersData.meta?.summary as OrderSummary);
       setAuxiliaryError("");
@@ -297,6 +301,8 @@ export default function AdminOrdersPage() {
   useEffect(() => {
     void loadData();
   }, [loadData]);
+
+  useAdminAutoRefresh(() => loadData(true));
 
   function resetPage() {
     setPage(1);

@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useAdminAutoRefresh } from "@/lib/use-admin-auto-refresh";
 import {
   Bell,
   Check,
@@ -107,8 +108,8 @@ export default function AdminSettingsPage() {
   const [staffMessage, setStaffMessage] = useState("");
   const [staffForm, setStaffForm] = useState<StaffForm>(EMPTY_STAFF_FORM);
 
-  const loadRestaurants = useCallback(async () => {
-    setLoading(true);
+  const loadRestaurants = useCallback(async (background = false) => {
+    if (!background) setLoading(true);
     setError("");
     try {
       const [restaurantsResponse, adminResponse] = await Promise.all([
@@ -119,7 +120,10 @@ export default function AdminSettingsPage() {
         readResponse<Restaurant[]>(restaurantsResponse),
         readResponse<{ admin: { id: string; role: string } }>(adminResponse),
       ]);
-      setRestaurants(data);
+      setRestaurants((current) => data.map((restaurant) => {
+        const existing = current.find((item) => item._id === restaurant._id);
+        return existing && JSON.stringify(existing) === JSON.stringify(restaurant) ? existing : restaurant;
+      }));
       setAdminId(profile.admin.id);
       setAdminRole(profile.admin.role);
       setSelectedId((current) => data.some((restaurant) => restaurant._id === current) ? current : data[0]?._id || "");
@@ -156,8 +160,8 @@ export default function AdminSettingsPage() {
     if (adminId) setNotificationsEnabled(getAdminOrderNotificationsEnabled(adminId));
   }, [adminId]);
 
-  const loadStaff = useCallback(async () => {
-    setStaffLoading(true);
+  const loadStaff = useCallback(async (background = false) => {
+    if (!background) setStaffLoading(true);
     setStaffError("");
     try {
       const response = await fetch("/api/admin/staff", { cache: "no-store" });
@@ -183,6 +187,33 @@ export default function AdminSettingsPage() {
   useEffect(() => {
     if (adminRole === "super_admin") void loadStaff();
   }, [adminRole, loadStaff]);
+
+  useAdminAutoRefresh(async () => {
+    const hasUnsavedSettings = Boolean(
+      form &&
+      selectedRestaurant &&
+      JSON.stringify(form) !== JSON.stringify(getSettings(selectedRestaurant))
+    );
+    const hasUnsavedStaffDrafts = staff.some((member) => {
+      const draft = staffDrafts[member._id];
+      const assignedRestaurantId = typeof member.assignedRestaurantId === "string"
+        ? member.assignedRestaurantId
+        : member.assignedRestaurantId?._id || "";
+      const role = STAFF_ROLES.find((entry) => entry.value === member.role)?.value || "order_manager";
+      return !draft || draft.role !== role ||
+        draft.assignedRestaurantId !== assignedRestaurantId ||
+        draft.isActive !== member.isActive;
+    });
+    const initialStaffForm = {
+      ...EMPTY_STAFF_FORM,
+      assignedRestaurantId: selectedRestaurant?._id || "",
+    };
+    const hasUnsavedNewStaff = JSON.stringify(staffForm) !== JSON.stringify(initialStaffForm);
+
+    if (saving || staffSaving || hasUnsavedSettings || hasUnsavedStaffDrafts || hasUnsavedNewStaff) return;
+    await loadRestaurants(true);
+    if (adminRole === "super_admin") await loadStaff(true);
+  });
 
   function selectRestaurant(id: string) {
     const restaurant = restaurants.find((entry) => entry._id === id);

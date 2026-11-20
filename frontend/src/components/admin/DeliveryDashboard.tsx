@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
+import { useAdminAutoRefresh } from "@/lib/use-admin-auto-refresh";
 import {
   Bike,
   Check,
@@ -192,9 +193,9 @@ export default function DeliveryDashboard() {
 
   useEffect(() => {
     void loadData();
-    const timer = window.setInterval(() => void loadData(true), 30_000);
-    return () => window.clearInterval(timer);
   }, [loadData]);
+
+  useAdminAutoRefresh(() => loadData(true));
 
   const visibleRiders = useMemo(
     () => (data?.riders || []).filter((rider) =>

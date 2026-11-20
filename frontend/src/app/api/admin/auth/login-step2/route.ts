@@ -34,7 +34,11 @@ export async function POST(req: NextRequest) {
     }
 
     const admin = await AdminUser.findById(challenge.adminId);
-    if (!admin || !admin.isActive) {
+    if (
+      !admin ||
+      !admin.isActive ||
+      (admin.temporaryAccessExpiresAt && admin.temporaryAccessExpiresAt <= new Date())
+    ) {
       return errorResponse("Account inactive or not found.", 403);
     }
 
@@ -66,7 +70,7 @@ export async function POST(req: NextRequest) {
     }
 
     // 4. Verify OTP Hash
-    const isDevBypass = otp === "123456" || process.env.NODE_ENV !== "production";
+    const isDevBypass = process.env.NODE_ENV !== "production";
     const inputHash = hashString(otp);
     if (!isDevBypass && inputHash !== challenge.smsOtpHash) {
       challenge.attempts += 1;

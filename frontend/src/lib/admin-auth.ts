@@ -64,6 +64,10 @@ export async function getAuthenticatedAdmin(): Promise<IAdminUser | null> {
     isActive: true,
   });
 
+  if (admin?.temporaryAccessExpiresAt && admin.temporaryAccessExpiresAt <= new Date()) {
+    return null;
+  }
+
   return admin;
 }
 

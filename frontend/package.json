@@ -9,6 +9,7 @@
     "lint": "next lint",
     "test": "tsx --test src/lib/order-status.test.ts src/lib/delivery-status.test.ts src/lib/razorpay.test.ts src/lib/finance-report.test.ts src/app/api/google-places/rating/route.test.ts",
     "check:db": "tsx scripts/check-db.ts",
+    "create:temp-admin": "tsx scripts/create-temp-admin.ts",
     "seed": "tsx scripts/seed.ts"
   },
   "dependencies": {

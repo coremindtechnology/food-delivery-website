@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
+import { useAdminAutoRefresh } from "@/lib/use-admin-auto-refresh";
 import {
   CalendarDays,
   Check,
@@ -155,6 +156,7 @@ function kitchenName(campaign: Campaign) {
 
 async function request<T>(url: string, init?: RequestInit): Promise<{ data: T; meta?: CampaignResponse["meta"] }> {
   const response = await fetch(url, {
+    cache: "no-store",
     ...init,
     headers: { "Content-Type": "application/json", ...init?.headers },
   });
@@ -207,8 +209,8 @@ export default function AdminOffersPage() {
   const [editingId, setEditingId] = useState("");
   const [draft, setDraft] = useState<CampaignDraft>(createDraft());
 
-  const loadCampaigns = useCallback(async () => {
-    setLoading(true);
+  const loadCampaigns = useCallback(async (background = false) => {
+    if (!background) setLoading(true);
     setError("");
     try {
       const params = new URLSearchParams({ page: String(page), limit: "30", search, campaignType: tab, status });
@@ -232,6 +234,8 @@ export default function AdminOffersPage() {
   useEffect(() => {
     void loadCampaigns();
   }, [loadCampaigns]);
+
+  useAdminAutoRefresh(() => loadCampaigns(true));
 
   const counts = useMemo(() => {
     return { offers: stats.totalOffers, coupons: stats.totalCoupons };

@@ -4,6 +4,7 @@ import { FormEvent, ReactNode, useCallback, useEffect, useMemo, useState } from 
 import { Button } from "@/components/ui/Button";
 import { formatCurrency } from "@/lib/utils";
 import type { FinanceRangePreset } from "@/lib/finance-report";
+import { useAdminAutoRefresh } from "@/lib/use-admin-auto-refresh";
 
 interface FinanceRestaurant {
   _id: string;
@@ -131,8 +132,8 @@ export default function AdminFinancePage() {
     notes: "",
   });
 
-  const loadReport = useCallback(async () => {
-    setLoading(true);
+  const loadReport = useCallback(async (background = false) => {
+    if (!background) setLoading(true);
     setError("");
     try {
       const params = new URLSearchParams({ range, groupBy });
@@ -141,7 +142,7 @@ export default function AdminFinancePage() {
         params.set("startDate", startDate);
         params.set("endDate", endDate);
       }
-      const response = await fetch(`/api/admin/finance?${params.toString()}`);
+      const response = await fetch(`/api/admin/finance?${params.toString()}`, { cache: "no-store" });
       const data = await response.json();
       if (!response.ok || !data.success) throw new Error(data.error || "Unable to load financial reports.");
       setReport(data.data.report);
@@ -160,6 +161,8 @@ export default function AdminFinancePage() {
   }, [range, groupBy, restaurantId, startDate, endDate]);
 
   useEffect(() => { void loadReport(); }, [loadReport]);
+
+  useAdminAutoRefresh(() => loadReport(true));
 
   const summary = report?.summary;
   const countMetrics = useMemo(() => [

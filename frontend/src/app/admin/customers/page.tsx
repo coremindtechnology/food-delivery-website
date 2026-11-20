@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useAdminAutoRefresh } from "@/lib/use-admin-auto-refresh";
 import {
   ArrowUpDown,
   BadgeCheck,
@@ -195,8 +196,8 @@ export default function AdminCustomersPage() {
     return () => window.clearTimeout(timer);
   }, [search]);
 
-  const loadCustomers = useCallback(async () => {
-    setLoading(true);
+  const loadCustomers = useCallback(async (background = false) => {
+    if (!background) setLoading(true);
     setError("");
     try {
       const params = new URLSearchParams({
@@ -251,13 +252,13 @@ export default function AdminCustomersPage() {
     }
   }, [customers, selectedPhone]);
 
-  const loadDetails = useCallback(async (signal?: AbortSignal) => {
+  const loadDetails = useCallback(async (signal?: AbortSignal, background = false) => {
     if (!selectedPhone) {
       setDetails(null);
       setDetailLoading(false);
       return;
     }
-    setDetailLoading(true);
+    if (!background) setDetailLoading(true);
     try {
       const params = new URLSearchParams({
         customerPhone: selectedPhone,
@@ -285,6 +286,19 @@ export default function AdminCustomersPage() {
     void loadDetails(controller.signal);
     return () => controller.abort();
   }, [loadDetails]);
+
+  useAdminAutoRefresh(async () => {
+    await loadCustomers(true);
+    if (
+      selectedPhone &&
+      details &&
+      nameDraft === (details.customer.name || "") &&
+      emailDraft === (details.customer.email || "") &&
+      notesDraft === (details.customer.notes || "")
+    ) {
+      await loadDetails(undefined, true);
+    }
+  });
 
   const selectedSummary = useMemo(
     () => customers.find((customer) => customer.phone === selectedPhone),

@@ -3,6 +3,7 @@
 import { ChangeEvent, FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { useAdminAutoRefresh } from "@/lib/use-admin-auto-refresh";
 
 type Restaurant = { _id: string; name: string; slug: string; type: string };
 type Category = {
@@ -72,6 +73,7 @@ const emptyDraft = (restaurantId = "", categoryId = ""): Draft => ({
 
 async function api<T>(url: string, init?: RequestInit): Promise<T> {
   const response = await fetch(url, {
+    cache: "no-store",
     ...init,
     headers: { "Content-Type": "application/json", ...init?.headers },
   });
@@ -219,6 +221,25 @@ export default function AdminMenuPage() {
       active = false;
     };
   }, [restaurantId, refresh]);
+
+  useAdminAutoRefresh(async () => {
+    const hasUncommittedInventory = Object.entries(inventoryDrafts).some(([id, value]) =>
+      items.find((item) => item._id === id)?.inventoryCount !== Number(value)
+    );
+    const hasUncommittedItemDraft =
+      JSON.stringify(draft) !== JSON.stringify(emptyDraft(draft.restaurantId, draft.categoryId));
+    const hasUncommittedCategoryDraft = Boolean(
+      categoryDraft.name.trim() || categoryDraft.slug.trim() || categoryDraft.description.trim()
+    );
+    if (!restaurantId || busy || editingItem || editingCategory || hasUncommittedItemDraft ||
+      hasUncommittedCategoryDraft || hasUncommittedInventory) return;
+
+    try {
+      await refresh(restaurantId);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Unable to refresh menu data.");
+    }
+  });
 
   function notify(action: () => Promise<void>) {
     setBusy(true);

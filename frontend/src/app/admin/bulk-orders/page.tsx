@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { ArrowUpRight, Inbox, Mail, MapPin, Phone, UserRound } from "lucide-react";
+import { useAdminAutoRefresh } from "@/lib/use-admin-auto-refresh";
 
 interface BulkOrderInquiry {
   fullName: string;
@@ -30,6 +31,31 @@ export default function BulkOrdersPage() {
       setLoading(false);
     }
   }, []);
+
+  useEffect(() => {
+    const syncStoredInquiries = () => {
+      try {
+        const saved = JSON.parse(window.localStorage.getItem(STORAGE_KEY) || "[]");
+        setItems(Array.isArray(saved) ? saved : []);
+      } catch {
+        setItems([]);
+      }
+    };
+    const handleStorage = (event: StorageEvent) => {
+      if (event.key === STORAGE_KEY) syncStoredInquiries();
+    };
+    window.addEventListener("storage", handleStorage);
+    return () => window.removeEventListener("storage", handleStorage);
+  }, []);
+
+  useAdminAutoRefresh(() => {
+    try {
+      const saved = JSON.parse(window.localStorage.getItem(STORAGE_KEY) || "[]");
+      setItems(Array.isArray(saved) ? saved : []);
+    } catch {
+      setItems([]);
+    }
+  });
 
   const stats = useMemo(() => {
     const totalOrders = items.reduce((sum, item) => sum + (Number(item.orderQuantity) || 0), 0);
